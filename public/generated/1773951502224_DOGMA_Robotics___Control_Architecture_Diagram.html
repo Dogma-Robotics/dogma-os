@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DOGMA Robotics - Control Architecture Diagram</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--gold:#C8A74B;--bg:#0A0A18;--bg2:#0E0E20;--bg3:#141428;--bd:#1A1A35;--tx:#E8E6E0;--tx2:#9994B0;--tx3:#5C5878;--green:#2D7A5D;--red:#8A3333;--amber:#A78530;--blue:#3A5A7A;--cyan:#3A7A7A}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--tx);line-height:1.7;min-height:100vh}
+  .container{max-width:960px;margin:0 auto;padding:48px 40px 60px}
+  
+  /* Header */
+  .header{margin-bottom:40px;padding-bottom:24px;border-bottom:2px solid var(--gold)}
+  .header h1{font-size:32px;font-weight:800;color:var(--gold);letter-spacing:-0.02em;margin-bottom:8px}
+  .header .meta{display:flex;align-items:center;gap:16px;font-size:13px;color:var(--tx2)}
+  .header .meta .dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+  .header .logo{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--gold);font-size:13px;letter-spacing:0.08em}
+  
+  /* Typography */
+  h2{font-size:22px;font-weight:700;color:var(--tx);margin:36px 0 16px;padding-left:14px;border-left:4px solid var(--gold);letter-spacing:-0.01em}
+  h3{font-size:17px;font-weight:600;color:var(--gold);margin:24px 0 10px}
+  h4{font-size:14px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:0.06em;margin:20px 0 8px}
+  p{margin:8px 0;font-size:15px;color:var(--tx)}
+  strong{color:var(--gold);font-weight:600}
+  em{color:var(--tx2)}
+  a{color:var(--gold);text-decoration:none;border-bottom:1px solid var(--gold)}
+  
+  /* Tables */
+  table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:14px}
+  thead th{background:var(--bg3);color:var(--gold);padding:12px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;border-bottom:2px solid var(--gold)}
+  tbody td{padding:10px 14px;border-bottom:1px solid var(--bd);color:var(--tx);vertical-align:top}
+  tbody tr:hover td{background:var(--bg2)}
+  tbody tr:last-child td{border-bottom:none}
+  
+  /* Badges */
+  .badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;font-family:'JetBrains Mono',monospace}
+  .badge.pass,.badge.success,.badge.validated,.badge.active,.badge.done,.badge.resolved{background:rgba(45,122,93,0.15);color:#4ADE80;border:1px solid rgba(45,122,93,0.3)}
+  .badge.fail,.badge.critical,.badge.blocked,.badge.high{background:rgba(138,51,51,0.15);color:#F87171;border:1px solid rgba(138,51,51,0.3)}
+  .badge.warn,.badge.warning,.badge.medium,.badge.progress,.badge.testing{background:rgba(167,133,48,0.15);color:#FBBF24;border:1px solid rgba(167,133,48,0.3)}
+  .badge.info,.badge.low,.badge.dev{background:rgba(58,90,122,0.15);color:#60A5FA;border:1px solid rgba(58,90,122,0.3)}
+  
+  /* Metric Grid */
+  .metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:16px 0 24px}
+  .metric-card{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:20px;text-align:center}
+  .metric-value{font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;letter-spacing:-0.02em}
+  .metric-label{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:0.08em;margin-top:4px;font-weight:600}
+  
+  /* KPI Row */
+  .kpi-row{display:flex;gap:16px;margin:16px 0;flex-wrap:wrap}
+  .kpi{flex:1;min-width:120px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:16px;text-align:center}
+  .kpi-val{display:block;font-size:24px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--gold)}
+  .kpi-label{display:block;font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px}
+  
+  /* Cards */
+  .card{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:20px;margin:12px 0}
+  .card h3{margin:0 0 8px;font-size:15px}
+  .card p{font-size:14px;color:var(--tx2);margin:4px 0}
+  
+  /* Progress bars */
+  .progress-bar{width:100%;height:24px;background:var(--bg3);border-radius:6px;overflow:hidden;margin:8px 0;border:1px solid var(--bd)}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),#E8C84B);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--bg);font-family:'JetBrains Mono',monospace;transition:width 0.3s}
+  .progress-fill.green{background:linear-gradient(90deg,var(--green),#4ADE80)}
+  .progress-fill.red{background:linear-gradient(90deg,var(--red),#F87171)}
+  
+  /* Callouts */
+  .callout{padding:14px 18px;border-radius:6px;margin:16px 0;font-size:14px;border-left:4px solid}
+  .callout.critical,.callout.danger{background:rgba(138,51,51,0.08);border-color:var(--red);color:#F87171}
+  .callout.success,.callout.good{background:rgba(45,122,93,0.08);border-color:var(--green);color:#4ADE80}
+  .callout.info,.callout.note{background:rgba(58,90,122,0.08);border-color:var(--blue);color:#60A5FA}
+  .callout.warning{background:rgba(167,133,48,0.08);border-color:var(--amber);color:#FBBF24}
+  
+  /* Lists */
+  ul,ol{margin:8px 0 16px 24px;font-size:14px}
+  li{margin:6px 0;color:var(--tx)}
+  li::marker{color:var(--gold)}
+  
+  /* Code */
+  code{background:var(--bg3);color:var(--gold);padding:2px 8px;border-radius:4px;font-size:13px;font-family:'JetBrains Mono',monospace}
+  pre{background:var(--bg3);border:1px solid var(--bd);padding:20px;border-radius:8px;overflow-x:auto;margin:16px 0}
+  pre code{background:none;padding:0;color:var(--tx)}
+  
+  /* Blockquote */
+  blockquote{border-left:4px solid var(--gold);padding:12px 20px;margin:16px 0;background:var(--bg2);border-radius:0 6px 6px 0;color:var(--tx2);font-style:italic}
+  
+  /* Divider */
+  hr{border:none;height:1px;background:var(--bd);margin:32px 0}
+  
+  /* Footer */
+  .footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--bd);text-align:center;font-size:11px;color:var(--tx3)}
+  
+  /* Print */
+  @media print{body{background:#fff;color:#1a1a2e}h1,h3,.badge,.kpi-val,.metric-value,strong{color:#1a1a2e!important}.badge{border-color:#ddd!important}table th{background:#f5f5f5;color:#1a1a2e}}
+</style></head>
+<body><div class="container">
+  <div class="header">
+    <h1>DOGMA Robotics - Control Architecture Diagram</h1>
+    <div class="meta">
+      <span class="logo">DOGMA ROBOTICS</span>
+      <span class="dot"></span>
+      <span>March 19, 2026</span>
+      <span class="dot"></span>
+      <span>Generated by DOGMA OS Agent</span>
+    </div>
+  </div>
+  <h1>DOGMA Robotics Control Architecture</h1>
+
+<div class="callout info">
+<strong>System Overview:</strong> Hierarchical control architecture with dual-layer motor control (M0-M4 and M5-M9), sensor fusion, and firmware coordination
+</div>
+
+<div class="metric-grid">
+  <div class="metric-card">
+    <div class="metric-value" style="color:#2D7A5D">78%</div>
+    <div class="metric-label">Control M0-M4</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" style="color:#D4A017">52%</div>
+    <div class="metric-label">Control M5-M9</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" style="color:#2D7A5D">70%</div>
+    <div class="metric-label">Firmware</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" style="color:#CC5500">38%</div>
+    <div class="metric-label">Sensor Fusion</div>
+  </div>
+</div>
+
+<h2>Architecture Layers</h2>
+
+<div style="display: flex; flex-direction: column; gap: 20px; margin: 30px 0;">
+
+<!-- Application Layer -->
+<div class="card" style="background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); color: white;">
+  <h3 style="color: white; margin-bottom: 15px;">📱 Application Layer - Skills & Tasks</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+    <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px;">
+      <strong>Grasp Skills</strong><br>
+      <span class="badge pass">Pinch: 92%</span>
+      <span class="badge pass">Power: 96%</span>
+      <span class="badge warn">Key: 68%</span>
+    </div>
+    <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px;">
+      <strong>Manipulation</strong><br>
+      <span class="badge pass">Pick-Place: 88%</span>
+      <span class="badge fail">Screw Drive: 45%</span>
+      <span class="badge fail">Assembly: 38%</span>
+    </div>
+  </div>
+</div>
+
+<!-- Control Layer -->
+<div class="card" style="background: linear-gradient(135deg, #50C878 0%, #3A9B5C 100%); color: white;">
+  <h3 style="color: white; margin-bottom: 15px;">🎛️ Control Layer - Motor Controllers</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; text-align: center;">
+      <strong>Control M0-M4</strong><br>
+      <div class="progress-bar" style="margin: 10px 0;">
+        <div class="progress-fill" style="width:78%; background: #2D7A5D;">78%</div>
+      </div>
+      <small>Primary motor control cluster<br>Handles major joint actuators</small>
+    </div>
+    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; text-align: center;">
+      <strong>Control M5-M9</strong><br>
+      <div class="progress-bar" style="margin: 10px 0;">
+        <div class="progress-fill" style="width:52%; background: #D4A017;">52%</div>
+      </div>
+      <small>Secondary motor control cluster<br>Fine manipulation control</small>
+    </div>
+  </div>
+</div>
+
+<!-- Firmware Layer -->
+<div class="card" style="background: linear-gradient(135deg, #9B59B6 0%, #8E44AD 100%); color: white;">
+  <h3 style="color: white; margin-bottom: 15px;">💻 Firmware Layer</h3>
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div style="flex: 1;">
+      <strong>Core Firmware (70%)</strong><br>
+      <small>Real-time control loops, communication protocols, safety systems</small>
+    </div>
+    <div class="progress-bar" style="width: 200px;">
+      <div class="progress-fill" style="width:70%; background: #2D7A5D;">70%</div>
+    </div>
+  </div>
+</div>
+
+<!-- Sensor Layer -->
+<div class="card" style="background: linear-gradient(135deg, #E67E22 0%, #D35400 100%); color: white;">
+  <h3 style="color: white; margin-bottom: 15px;">🔍 Sensor & Perception Layer</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
+      <strong>Tactile Sensors (61%)</strong><br>
+      <div class="progress-bar" style="margin: 10px 0;">
+        <div class="progress-fill" style="width:61%; background: #D4A017;">61%</div>
+      </div>
+      <span class="badge fail">⚠️ Drift Issue (INC-002)</span>
+    </div>
+    <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
+      <strong>Sensor Fusion (38%)</strong><br>
+      <div class="progress-bar" style="margin: 10px 0;">
+        <div class="progress-fill" style="width:38%; background: #CC5500;">38%</div>
+      </div>
+      <span class="badge fail">🚫 Blocks Downstream</span>
+    </div>
+  </div>
+</div>
+
+<!-- Hardware Layer -->
+<div class="card" style="background: linear-gradient(135deg, #2C3E50 0%, #34495E 100%); color: white;">
+  <h3 style="color: white; margin-bottom: 15px;">⚙️ Hardware Layer - Actuators & Structure</h3>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
+    <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; text-align: center;">
+      <strong>McKibben Actuators</strong><br>
+      <div class="progress-bar" style="margin: 8px 0;">
+        <div class="progress-fill" style="width:74%;">74%</div>
+      </div>
+    </div>
+    <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; text-align: center;">
+      <strong>Wrist Assembly</strong><br>
+      <div class="progress-bar" style="margin: 8px 0;">
+        <div class="progress-fill" style="width:45%; background: #CC5500;">45%</div>
+      </div>
+    </div>
+    <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; text-align: center;">
+      <strong>Bone Structure</strong><br>
+      <div class="progress-bar" style="margin: 8px 0;">
+        <div class="progress-fill" style="width:82%;">82%</div>
+      </div>
+    </div>
+    <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; text-align: center;">
+      <strong>Tendon Network</strong><br>
+      <div class="progress-bar" style="margin: 8px 0;">
+        <div class="progress-fill" style="width:68%;">68%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<h2>Control Flow & Dependencies</h2>
+
+<div class="card">
+  <h3>🔄 Data Flow Architecture</h3>
+  <div style="font-family: monospace; background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 15px 0;">
+<pre style="margin: 0; font-size: 14px; line-height: 1.6;">
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Skill Layer   │    │   Task Layer    │    │  Pilot Layer    │
+│   (92%-38%)     │◄──►│   (Critical)    │◄──►│   (71%-90%)     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         ▲                        ▲                        ▲
+         │                        │                        │
+         ▼                        ▼                        ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Control M0-M4   │◄──►│ Control M5-M9   │◄──►│    Firmware     │
+│     (78%)       │    │     (52%)       │    │     (70%)       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         ▲                        ▲                        ▲
+         │                        │                        │
+         └────────────────────────┼────────────────────────┘
+                                  │
+                                  ▼
+         ┌─────────────────────────────────────────────────────────┐
+         │              Sensor Fusion Layer (38%)                 │
+         │          ⚠️ CRITICAL BOTTLENECK - BLOCKS ALL           │
+         └─────────────────────────────────────────────────────────┘
+                                  ▲
+         ┌────────────────────────┼────────────────────────┐
+         │                        │                        │
+         ▼                        ▼                        ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Tactile Sensors │    │ McKibben Actuat.│    │ Wrist Assembly  │
+│     (61%)       │    │     (74%)       │    │     (45%)       │
+│ ⚠️ INC-002 Drift│    │                 │    │ 🚫 Blocks Keys  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+</pre>
+  </div>
+</div>
+
+<h2>Critical Issues & Blockers</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Component</th>
+      <th>Status</th>
+      <th>Impact</th>
+      <th>Blocks</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Sensor Fusion (ss10)</td>
+      <td><span class="badge fail">38%</span></td>
+      <td>Critical bottleneck</td>
+      <td>Screw Drive, Assembly skills</td>
+    </tr>
+    <tr>
+      <td>Wrist Assembly (ss6)</td>
+      <td><span class="badge fail">45%</span></td>
+      <td>Blocks manipulation</td>
+      <td>Key Grasp, Screw Drive</td>
+    </tr>
+    <tr>
+      <td>Tactile Sensors (ss5)</td>
+      <td><span class="badge warn">61%</span></td>
+      <td>Drift issue (INC-002)</td>
+      <td>Pick-Place, Amazon pilot</td>
+    </tr>
+    <tr>
+      <td>Control M5-M9 (ss8)</td>
+      <td><span class="badge warn">52%</span></td>
+      <td>Fine control limited</td>
+      <td>Precision tasks</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Deployment Status</h2>
+
+<div class="metric-grid">
+  <div class="metric-card">
+    <div class="metric-value" style="color:#2D7A5D">4</div>
+    <div class="metric-label">Active Pilots</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" style="color:#2D7A5D">4</div>
+    <div class="metric-label">Fleet Units</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" style="color:#CC5500">2</div>
+    <div class="metric-label">Critical Issues</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" style="color:#D4A017">83%</div>
+    <div class="metric-label">Avg Pilot Success</div>
+  </div>
+</div>
+
+<div class="callout critical">
+<strong>Architecture Priority:</strong> Sensor Fusion (38%) is the critical path bottleneck blocking downstream capabilities. Immediate development focus required.
+</div>
+  <div class="footer">DOGMA Robotics &mdash; Confidential &mdash; Generated 2026-03-19 20:18 UTC</div>
+</div></body></html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DOGMA Robotics - Financial Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--gold:#C8A74B;--bg:#0A0A18;--bg2:#0E0E20;--bg3:#141428;--bd:#1A1A35;--tx:#E8E6E0;--tx2:#9994B0;--tx3:#5C5878;--green:#2D7A5D;--red:#8A3333;--amber:#A78530;--blue:#3A5A7A;--cyan:#3A7A7A}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--tx);line-height:1.7;min-height:100vh}
+  .container{max-width:960px;margin:0 auto;padding:48px 40px 60px}
+  
+  /* Header */
+  .header{margin-bottom:40px;padding-bottom:24px;border-bottom:2px solid var(--gold)}
+  .header h1{font-size:32px;font-weight:800;color:var(--gold);letter-spacing:-0.02em;margin-bottom:8px}
+  .header .meta{display:flex;align-items:center;gap:16px;font-size:13px;color:var(--tx2)}
+  .header .meta .dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+  .header .logo{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--gold);font-size:13px;letter-spacing:0.08em}
+  
+  /* Typography */
+  h2{font-size:22px;font-weight:700;color:var(--tx);margin:36px 0 16px;padding-left:14px;border-left:4px solid var(--gold);letter-spacing:-0.01em}
+  h3{font-size:17px;font-weight:600;color:var(--gold);margin:24px 0 10px}
+  h4{font-size:14px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:0.06em;margin:20px 0 8px}
+  p{margin:8px 0;font-size:15px;color:var(--tx)}
+  strong{color:var(--gold);font-weight:600}
+  em{color:var(--tx2)}
+  a{color:var(--gold);text-decoration:none;border-bottom:1px solid var(--gold)}
+  
+  /* Tables */
+  table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:14px}
+  thead th{background:var(--bg3);color:var(--gold);padding:12px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;border-bottom:2px solid var(--gold)}
+  tbody td{padding:10px 14px;border-bottom:1px solid var(--bd);color:var(--tx);vertical-align:top}
+  tbody tr:hover td{background:var(--bg2)}
+  tbody tr:last-child td{border-bottom:none}
+  
+  /* Badges */
+  .badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;font-family:'JetBrains Mono',monospace}
+  .badge.pass,.badge.success,.badge.validated,.badge.active,.badge.done,.badge.resolved{background:rgba(45,122,93,0.15);color:#4ADE80;border:1px solid rgba(45,122,93,0.3)}
+  .badge.fail,.badge.critical,.badge.blocked,.badge.high{background:rgba(138,51,51,0.15);color:#F87171;border:1px solid rgba(138,51,51,0.3)}
+  .badge.warn,.badge.warning,.badge.medium,.badge.progress,.badge.testing{background:rgba(167,133,48,0.15);color:#FBBF24;border:1px solid rgba(167,133,48,0.3)}
+  .badge.info,.badge.low,.badge.dev{background:rgba(58,90,122,0.15);color:#60A5FA;border:1px solid rgba(58,90,122,0.3)}
+  
+  /* Metric Grid */
+  .metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:16px 0 24px}
+  .metric-card{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:20px;text-align:center}
+  .metric-value{font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;letter-spacing:-0.02em}
+  .metric-label{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:0.08em;margin-top:4px;font-weight:600}
+  
+  /* KPI Row */
+  .kpi-row{display:flex;gap:16px;margin:16px 0;flex-wrap:wrap}
+  .kpi{flex:1;min-width:120px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:16px;text-align:center}
+  .kpi-val{display:block;font-size:24px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--gold)}
+  .kpi-label{display:block;font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px}
+  
+  /* Cards */
+  .card{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:20px;margin:12px 0}
+  .card h3{margin:0 0 8px;font-size:15px}
+  .card p{font-size:14px;color:var(--tx2);margin:4px 0}
+  
+  /* Progress bars */
+  .progress-bar{width:100%;height:24px;background:var(--bg3);border-radius:6px;overflow:hidden;margin:8px 0;border:1px solid var(--bd)}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),#E8C84B);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--bg);font-family:'JetBrains Mono',monospace;transition:width 0.3s}
+  .progress-fill.green{background:linear-gradient(90deg,var(--green),#4ADE80)}
+  .progress-fill.red{background:linear-gradient(90deg,var(--red),#F87171)}
+  
+  /* Callouts */
+  .callout{padding:14px 18px;border-radius:6px;margin:16px 0;font-size:14px;border-left:4px solid}
+  .callout.critical,.callout.danger{background:rgba(138,51,51,0.08);border-color:var(--red);color:#F87171}
+  .callout.success,.callout.good{background:rgba(45,122,93,0.08);border-color:var(--green);color:#4ADE80}
+  .callout.info,.callout.note{background:rgba(58,90,122,0.08);border-color:var(--blue);color:#60A5FA}
+  .callout.warning{background:rgba(167,133,48,0.08);border-color:var(--amber);color:#FBBF24}
+  
+  /* Lists */
+  ul,ol{margin:8px 0 16px 24px;font-size:14px}
+  li{margin:6px 0;color:var(--tx)}
+  li::marker{color:var(--gold)}
+  
+  /* Code */
+  code{background:var(--bg3);color:var(--gold);padding:2px 8px;border-radius:4px;font-size:13px;font-family:'JetBrains Mono',monospace}
+  pre{background:var(--bg3);border:1px solid var(--bd);padding:20px;border-radius:8px;overflow-x:auto;margin:16px 0}
+  pre code{background:none;padding:0;color:var(--tx)}
+  
+  /* Blockquote */
+  blockquote{border-left:4px solid var(--gold);padding:12px 20px;margin:16px 0;background:var(--bg2);border-radius:0 6px 6px 0;color:var(--tx2);font-style:italic}
+  
+  /* Divider */
+  hr{border:none;height:1px;background:var(--bd);margin:32px 0}
+  
+  /* Footer */
+  .footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--bd);text-align:center;font-size:11px;color:var(--tx3)}
+  
+  /* Print */
+  @media print{body{background:#fff;color:#1a1a2e}h1,h3,.badge,.kpi-val,.metric-value,strong{color:#1a1a2e!important}.badge{border-color:#ddd!important}table th{background:#f5f5f5;color:#1a1a2e}}
+</style></head>
+<body><div class="container">
+  <div class="header">
+    <h1>DOGMA Robotics - Financial Overview</h1>
+    <div class="meta">
+      <span class="logo">DOGMA ROBOTICS</span>
+      <span class="dot"></span>
+      <span>March 19, 2026</span>
+      <span class="dot"></span>
+      <span>Generated by DOGMA OS Agent</span>
+    </div>
+  </div>
+  <h2>Financial Summary</h2>
+
+<div class="metric-grid">
+  <div class="metric-card">
+    <div class="metric-value" style="color:#E74C3C">$45,000</div>
+    <div class="metric-label">Cash on Hand</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" style="color:#E74C3C">$12,500</div>
+    <div class="metric-label">Monthly Burn Rate</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" style="color:#E74C3C">3.6</div>
+    <div class="metric-label">Months Runway</div>
+  </div>
+</div>
+
+<div class="callout critical">
+<strong>CRITICAL FINANCIAL ALERT:</strong> Only 3.6 months of runway remaining. Immediate fundraising required.
+</div>
+
+<h2>Detailed Financial Breakdown</h2>
+
+<table>
+<thead>
+<tr>
+<th>Financial Metric</th>
+<th>Amount</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cash Position</td>
+<td>$45,000</td>
+<td><span class="badge fail">Critical</span></td>
+<td>Low cash reserves for hardware startup</td>
+</tr>
+<tr>
+<td>Monthly Burn Rate</td>
+<td>$12,500</td>
+<td><span class="badge warn">High</span></td>
+<td>Includes R&D, salaries, manufacturing costs</td>
+</tr>
+<tr>
+<td>Runway Remaining</td>
+<td>3.6 months</td>
+<td><span class="badge fail">Critical</span></td>
+<td>Based on current burn rate</td>
+</tr>
+<tr>
+<td>Projected Depletion</td>
+<td>~July 2026</td>
+<td><span class="badge fail">Critical</span></td>
+<td>Without additional funding</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Investor Funding Rounds</h2>
+
+<table>
+<thead>
+<tr>
+<th>Investor</th>
+<th>Ownership %</th>
+<th>Investment Stage</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Eclipse Ventures</td>
+<td>35%</td>
+<td>Series A</td>
+<td><span class="badge info">Active</span></td>
+</tr>
+<tr>
+<td>The Residency SF</td>
+<td>40%</td>
+<td>Seed</td>
+<td><span class="badge info">Active</span></td>
+</tr>
+<tr>
+<td>Angel Syndicate MX</td>
+<td>25%</td>
+<td>Angel</td>
+<td><span class="badge info">Active</span></td>
+</tr>
+<tr>
+<td>Khosla Ventures</td>
+<td>20%</td>
+<td>Seed</td>
+<td><span class="badge info">Active</span></td>
+</tr>
+<tr>
+<td>Y Combinator</td>
+<td>15%</td>
+<td>Accelerator</td>
+<td><span class="badge info">Active</span></td>
+</tr>
+</tbody>
+</table>
+
+<h2>Financial Health Analysis</h2>
+
+<div class="card">
+<h3>Cash Flow Analysis</h3>
+<p><strong>Current Status:</strong> Negative cash flow with high burn rate</p>
+<p><strong>Key Drivers:</strong> R&D expenses, manufacturing costs, personnel</p>
+<p><strong>Revenue Status:</strong> Pre-revenue stage with pilot programs in progress</p>
+</div>
+
+<div class="card">
+<h3>Funding Requirements</h3>
+<p><strong>Immediate Need:</strong> Bridge funding to extend runway</p>
+<p><strong>Series B Target:</strong> $2-5M to reach revenue milestones</p>
+<p><strong>Use of Funds:</strong> Manufacturing scale-up, pilot deployments, team expansion</p>
+</div>
+
+<h2>Financial Risk Assessment</h2>
+
+<div class="progress-bar">
+<div class="progress-fill" style="width:28%; background-color:#E74C3C;">28% Runway Remaining</div>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>Risk Factor</th>
+<th>Severity</th>
+<th>Impact</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cash Depletion</td>
+<td><span class="badge fail">Critical</span></td>
+<td>Company shutdown by July 2026</td>
+<td>Emergency fundraising, bridge loans</td>
+</tr>
+<tr>
+<td>Fundraising Delays</td>
+<td><span class="badge fail">Critical</span></td>
+<td>Operational disruption</td>
+<td>Accelerate current investor discussions</td>
+</tr>
+<tr>
+<td>Pilot Revenue Delays</td>
+<td><span class="badge warn">High</span></td>
+<td>Extended cash needs</td>
+<td>Expedite pilot conversions</td>
+</tr>
+</tbody>
+</table>
+
+<div class="kpi-row">
+<div class="kpi">
+<span class="kpi-val">$45K</span>
+<span class="kpi-label">Cash</span>
+</div>
+<div class="kpi">
+<span class="kpi-val">$12.5K</span>
+<span class="kpi-label">Monthly Burn</span>
+</div>
+<div class="kpi">
+<span class="kpi-val">3.6mo</span>
+<span class="kpi-label">Runway</span>
+</div>
+<div class="kpi">
+<span class="kpi-val">135%</span>
+<span class="kpi-label">Total Investor %</span>
+</div>
+</div>
+
+<p><em>Financial data as of March 19, 2026</em></p>
+  <div class="footer">DOGMA Robotics &mdash; Confidential &mdash; Generated 2026-03-20 01:04 UTC</div>
+</div></body></html>

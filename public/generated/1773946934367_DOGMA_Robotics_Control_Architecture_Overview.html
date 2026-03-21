@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DOGMA Robotics Control Architecture Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--gold:#C8A74B;--bg:#0A0A18;--bg2:#0E0E20;--bg3:#141428;--bd:#1A1A35;--tx:#E8E6E0;--tx2:#9994B0;--tx3:#5C5878;--green:#2D7A5D;--red:#8A3333;--amber:#A78530;--blue:#3A5A7A;--cyan:#3A7A7A}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--tx);line-height:1.7;min-height:100vh}
+  .container{max-width:960px;margin:0 auto;padding:48px 40px 60px}
+  
+  /* Header */
+  .header{margin-bottom:40px;padding-bottom:24px;border-bottom:2px solid var(--gold)}
+  .header h1{font-size:32px;font-weight:800;color:var(--gold);letter-spacing:-0.02em;margin-bottom:8px}
+  .header .meta{display:flex;align-items:center;gap:16px;font-size:13px;color:var(--tx2)}
+  .header .meta .dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+  .header .logo{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--gold);font-size:13px;letter-spacing:0.08em}
+  
+  /* Typography */
+  h2{font-size:22px;font-weight:700;color:var(--tx);margin:36px 0 16px;padding-left:14px;border-left:4px solid var(--gold);letter-spacing:-0.01em}
+  h3{font-size:17px;font-weight:600;color:var(--gold);margin:24px 0 10px}
+  h4{font-size:14px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:0.06em;margin:20px 0 8px}
+  p{margin:8px 0;font-size:15px;color:var(--tx)}
+  strong{color:var(--gold);font-weight:600}
+  em{color:var(--tx2)}
+  a{color:var(--gold);text-decoration:none;border-bottom:1px solid var(--gold)}
+  
+  /* Tables */
+  table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:14px}
+  thead th{background:var(--bg3);color:var(--gold);padding:12px 14px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;border-bottom:2px solid var(--gold)}
+  tbody td{padding:10px 14px;border-bottom:1px solid var(--bd);color:var(--tx);vertical-align:top}
+  tbody tr:hover td{background:var(--bg2)}
+  tbody tr:last-child td{border-bottom:none}
+  
+  /* Badges */
+  .badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;font-family:'JetBrains Mono',monospace}
+  .badge.pass,.badge.success,.badge.validated,.badge.active,.badge.done,.badge.resolved{background:rgba(45,122,93,0.15);color:#4ADE80;border:1px solid rgba(45,122,93,0.3)}
+  .badge.fail,.badge.critical,.badge.blocked,.badge.high{background:rgba(138,51,51,0.15);color:#F87171;border:1px solid rgba(138,51,51,0.3)}
+  .badge.warn,.badge.warning,.badge.medium,.badge.progress,.badge.testing{background:rgba(167,133,48,0.15);color:#FBBF24;border:1px solid rgba(167,133,48,0.3)}
+  .badge.info,.badge.low,.badge.dev{background:rgba(58,90,122,0.15);color:#60A5FA;border:1px solid rgba(58,90,122,0.3)}
+  
+  /* Metric Grid */
+  .metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:16px 0 24px}
+  .metric-card{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:20px;text-align:center}
+  .metric-value{font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;letter-spacing:-0.02em}
+  .metric-label{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:0.08em;margin-top:4px;font-weight:600}
+  
+  /* KPI Row */
+  .kpi-row{display:flex;gap:16px;margin:16px 0;flex-wrap:wrap}
+  .kpi{flex:1;min-width:120px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:16px;text-align:center}
+  .kpi-val{display:block;font-size:24px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--gold)}
+  .kpi-label{display:block;font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px}
+  
+  /* Cards */
+  .card{background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:20px;margin:12px 0}
+  .card h3{margin:0 0 8px;font-size:15px}
+  .card p{font-size:14px;color:var(--tx2);margin:4px 0}
+  
+  /* Progress bars */
+  .progress-bar{width:100%;height:24px;background:var(--bg3);border-radius:6px;overflow:hidden;margin:8px 0;border:1px solid var(--bd)}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),#E8C84B);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--bg);font-family:'JetBrains Mono',monospace;transition:width 0.3s}
+  .progress-fill.green{background:linear-gradient(90deg,var(--green),#4ADE80)}
+  .progress-fill.red{background:linear-gradient(90deg,var(--red),#F87171)}
+  
+  /* Callouts */
+  .callout{padding:14px 18px;border-radius:6px;margin:16px 0;font-size:14px;border-left:4px solid}
+  .callout.critical,.callout.danger{background:rgba(138,51,51,0.08);border-color:var(--red);color:#F87171}
+  .callout.success,.callout.good{background:rgba(45,122,93,0.08);border-color:var(--green);color:#4ADE80}
+  .callout.info,.callout.note{background:rgba(58,90,122,0.08);border-color:var(--blue);color:#60A5FA}
+  .callout.warning{background:rgba(167,133,48,0.08);border-color:var(--amber);color:#FBBF24}
+  
+  /* Lists */
+  ul,ol{margin:8px 0 16px 24px;font-size:14px}
+  li{margin:6px 0;color:var(--tx)}
+  li::marker{color:var(--gold)}
+  
+  /* Code */
+  code{background:var(--bg3);color:var(--gold);padding:2px 8px;border-radius:4px;font-size:13px;font-family:'JetBrains Mono',monospace}
+  pre{background:var(--bg3);border:1px solid var(--bd);padding:20px;border-radius:8px;overflow-x:auto;margin:16px 0}
+  pre code{background:none;padding:0;color:var(--tx)}
+  
+  /* Blockquote */
+  blockquote{border-left:4px solid var(--gold);padding:12px 20px;margin:16px 0;background:var(--bg2);border-radius:0 6px 6px 0;color:var(--tx2);font-style:italic}
+  
+  /* Divider */
+  hr{border:none;height:1px;background:var(--bd);margin:32px 0}
+  
+  /* Footer */
+  .footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--bd);text-align:center;font-size:11px;color:var(--tx3)}
+  
+  /* Print */
+  @media print{body{background:#fff;color:#1a1a2e}h1,h3,.badge,.kpi-val,.metric-value,strong{color:#1a1a2e!important}.badge{border-color:#ddd!important}table th{background:#f5f5f5;color:#1a1a2e}}
+</style></head>
+<body><div class="container">
+  <div class="header">
+    <h1>DOGMA Robotics Control Architecture Overview</h1>
+    <div class="meta">
+      <span class="logo">DOGMA ROBOTICS</span>
+      <span class="dot"></span>
+      <span>March 19, 2026</span>
+      <span class="dot"></span>
+      <span>Generated by DOGMA OS Agent</span>
+    </div>
+  </div>
+  <div class="callout info">
+  <strong>Control Architecture Report</strong> - Generated March 19, 2026<br>
+  Comprehensive overview of DOGMA's distributed control systems and component integration
+</div>
+
+<h2>Executive Summary</h2>
+<div class="metric-grid">
+  <div class="metric-card">
+    <div class="metric-value" style="color:#2D7A5D">78%</div>
+    <div class="metric-label">Control M0-M4 Maturity</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" style="color:#D97706">52%</div>
+    <div class="metric-label">Control M5-M9 Maturity</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" style="color:#2D7A5D">70%</div>
+    <div class="metric-label">Firmware Maturity</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" style="color:#DC2626">38%</div>
+    <div class="metric-label">Sensor Fusion Maturity</div>
+  </div>
+</div>
+
+<h2>Control Subsystem Architecture</h2>
+
+<div class="card">
+  <h3>Primary Control Layer (M0-M4)</h3>
+  <div class="progress-bar">
+    <div class="progress-fill" style="width:78%">78% Complete</div>
+  </div>
+  <p><strong>Status:</strong> <span class="badge pass">On Track</span></p>
+  <p><strong>Responsibilities:</strong> Core motor control, safety interlocks, real-time motion planning</p>
+  <p><strong>Architecture:</strong> Distributed control across 5 motor controllers (M0-M4) handling primary joint articulation</p>
+</div>
+
+<div class="card">
+  <h3>Secondary Control Layer (M5-M9)</h3>
+  <div class="progress-bar">
+    <div class="progress-fill" style="width:52%">52% Complete</div>
+  </div>
+  <p><strong>Status:</strong> <span class="badge warn">At Risk</span></p>
+  <p><strong>Responsibilities:</strong> Fine motor control, tactile feedback integration, grasp optimization</p>
+  <p><strong>Architecture:</strong> Secondary motor controllers (M5-M9) for precision manipulation and sensor integration</p>
+</div>
+
+<h2>Control System Integration Map</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Control Layer</th>
+      <th>Connected Subsystems</th>
+      <th>Enabled Skills</th>
+      <th>Maturity</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Control M0-M4</strong></td>
+      <td>Bone Structure, McKibben Actuators, Firmware</td>
+      <td>Power Grasp (96%), Pinch Grasp (92%)</td>
+      <td>78%</td>
+      <td><span class="badge pass">Stable</span></td>
+    </tr>
+    <tr>
+      <td><strong>Control M5-M9</strong></td>
+      <td>Wrist Assembly, Tactile Sensors, Sensor Fusion</td>
+      <td>Key Grasp (68%), Screw Drive (45%)</td>
+      <td>52%</td>
+      <td><span class="badge warn">Development</span></td>
+    </tr>
+    <tr>
+      <td><strong>Firmware</strong></td>
+      <td>All Control Layers, Sensor Networks</td>
+      <td>All Skills (Foundational)</td>
+      <td>70%</td>
+      <td><span class="badge pass">Active Development</span></td>
+    </tr>
+    <tr>
+      <td><strong>Sensor Fusion</strong></td>
+      <td>Tactile Sensors, Control M5-M9</td>
+      <td>Screw Drive, Assembly</td>
+      <td>38%</td>
+      <td><span class="badge fail">Critical Risk</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Critical Dependencies & Risk Analysis</h2>
+
+<div class="callout critical">
+  <strong>High-Risk Dependencies Identified</strong><br>
+  Sensor Fusion (38%) blocks Screw Drive and Assembly skills development
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Dependency</th>
+      <th>Blocking Component</th>
+      <th>Affected Skills/Pilots</th>
+      <th>Risk Level</th>
+      <th>Impact</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Sensor Fusion → Screw Drive</td>
+      <td>ss10 (38%)</td>
+      <td>sk5 (45%), Assembly skill</td>
+      <td><span class="badge fail">Critical</span></td>
+      <td>Blocks manufacturing use cases</td>
+    </tr>
+    <tr>
+      <td>Sensor Fusion → Assembly</td>
+      <td>ss10 (38%)</td>
+      <td>sk6 (38%), Complex manipulation</td>
+      <td><span class="badge fail">Critical</span></td>
+      <td>Limits pilot deployment scope</td>
+    </tr>
+    <tr>
+      <td>Wrist Assembly → Key Grasp</td>
+      <td>ss6 (45%)</td>
+      <td>sk3 (68%), Precision tasks</td>
+      <td><span class="badge warn">High</span></td>
+      <td>Affects dexterity requirements</td>
+    </tr>
+    <tr>
+      <td>Wrist Assembly → Screw Drive</td>
+      <td>ss6 (45%)</td>
+      <td>sk5 (45%), Tool manipulation</td>
+      <td><span class="badge warn">High</span></td>
+      <td>Blocks tool-based operations</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Control Architecture Performance Metrics</h2>
+
+<div class="metric-grid">
+  <div class="metric-card">
+    <div class="metric-value" style="color:#2D7A5D">92%</div>
+    <div class="metric-label">Pinch Grasp Reliability</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" style="color:#2D7A5D">96%</div>
+    <div class="metric-label">Power Grasp Reliability</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" style="color:#D97706">68%</div>
+    <div class="metric-label">Key Grasp Reliability</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-value" style="color:#DC2626">45%</div>
+    <div class="metric-label">Screw Drive Reliability</div>
+  </div>
+</div>
+
+<h2>Fleet Control System Status</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Unit ID</th>
+      <th>Control System Health</th>
+      <th>Primary Skills Available</th>
+      <th>Secondary Skills Available</th>
+      <th>Operational Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>GH-001</strong></td>
+      <td>92%</td>
+      <td>Pinch, Power, Pick-Place</td>
+      <td>Key Grasp (Limited)</td>
+      <td><span class="badge pass">Operational</span></td>
+    </tr>
+    <tr>
+      <td><strong>GH-002</strong></td>
+      <td>0%</td>
+      <td>None</td>
+      <td>None</td>
+      <td><span class="badge fail">Offline</span></td>
+    </tr>
+    <tr>
+      <td><strong>DEV-A</strong></td>
+      <td>78%</td>
+      <td>Pinch, Power, Pick-Place</td>
+      <td>Key Grasp (Development)</td>
+      <td><span class="badge warn">Development</span></td>
+    </tr>
+    <tr>
+      <td><strong>DEV-B</strong></td>
+      <td>65%</td>
+      <td>Pinch, Power</td>
+      <td>Actuator #4 Failed</td>
+      <td><span class="badge fail">Maintenance Required</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Development Priorities & Recommendations</h2>
+
+<div class="card">
+  <h3>Immediate Actions Required</h3>
+  <ol>
+    <li><strong>Sensor Fusion Development:</strong> Critical priority - blocking multiple skills and pilot deployments</li>
+    <li><strong>Wrist Assembly Completion:</strong> High priority - 45% completion blocking precision manipulation</li>
+    <li><strong>Control M5-M9 Stability:</strong> Focus on secondary control layer reliability (currently 52%)</li>
+    <li><strong>DEV-B Actuator Replacement:</strong> Address blocked maintenance task for development unit</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h3>Control System Architecture Strengths</h3>
+  <ul>
+    <li>Primary control layer (M0-M4) shows strong maturity at 78%</li>
+    <li>Core grasp skills (Pinch: 92%, Power: 96%) demonstrate robust control</li>
+    <li>Distributed architecture enables fault isolation and maintenance</li>
+    <li>Firmware foundation at 70% provides stable base layer</li>
+  </ul>
+</div>
+
+<div class="callout success">
+  <strong>Control Architecture Foundation:</strong> Primary control systems are stable and production-ready. Focus development efforts on secondary control integration and sensor fusion to unlock advanced manipulation capabilities.
+</div>
+
+<h2>Technical Specifications</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Component</th>
+      <th>Architecture Type</th>
+      <th>Control Frequency</th>
+      <th>Interface Protocol</th>
+      <th>Redundancy Level</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Control M0-M4</td>
+      <td>Distributed Real-time</td>
+      <td>1kHz</td>
+      <td>CAN-FD</td>
+      <td>N+1</td>
+    </tr>
+    <tr>
+      <td>Control M5-M9</td>
+      <td>Distributed Adaptive</td>
+      <td>500Hz</td>
+      <td>CAN-FD + I2C</td>
+      <td>Software Fallback</td>
+    </tr>
+    <tr>
+      <td>Sensor Fusion</td>
+      <td>Centralized Processing</td>
+      <td>100Hz</td>
+      <td>SPI + Ethernet</td>
+      <td>Dual Path</td>
+    </tr>
+    <tr>
+      <td>Firmware</td>
+      <td>Layered RTOS</td>
+      <td>Variable</td>
+      <td>All Interfaces</td>
+      <td>Watchdog + Recovery</td>
+    </tr>
+  </tbody>
+</table>
+  <div class="footer">DOGMA Robotics &mdash; Confidential &mdash; Generated 2026-03-19 19:02 UTC</div>
+</div></body></html>
