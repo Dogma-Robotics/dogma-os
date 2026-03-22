@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { SERVICES, storeToken, supabase, getConnections } from '@/lib/services'
+import { SERVICES, storeToken, getConnections } from '@/lib/services'
+import { getSupabase } from '@/lib/auth'
 
 const BASE_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000'
 
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
   const { service, action, token } = await req.json()
 
   if (action === 'disconnect') {
-    await supabase?.from('connections').delete().eq('user_id','jero').eq('service', service)
+    await getSupabase()?.from('connections').delete().eq('user_id','jero').eq('service', service)
     return NextResponse.json({ ok: true })
   }
 

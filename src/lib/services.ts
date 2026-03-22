@@ -270,7 +270,8 @@ export function storeFileLocally(filename: string, content: string | Buffer, mim
 }
 
 // Legacy Supabase export for backward compat
-export const supabase = getSupabase()
+export function getSupabaseClient() { return getSupabase() }
+export const supabase = null as any // use getSupabaseClient() instead
 export function hasSupabase(): boolean {
   return !!getSupabase()
 }
