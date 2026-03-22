@@ -2,6 +2,7 @@
 'use client'
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
+import { useOpenClaw } from '@/hooks/useOpenClaw';
 var THREE = typeof window !== "undefined" ? require("three") : null;
 
 var C={bg:"#030308",bg1:"#060610",bg2:"#0A0A18",bg3:"#0E0E20",bd:"#1A1A35",gold:"#C8A74B",gD:"rgba(200,167,75,0.06)",tx:"#C8C4BC",tx2:"#6E6A84",tx3:"#444060",g:"#2D7A5D",r:"#8A3333",a:"#A78530",b:"#3A5A7A",c:"#3A7A7A"};
@@ -998,6 +999,7 @@ var AGENT_CATEGORIES=[
 
 export default function Dashboard(){
 var _s=useState(seed),D=_s[0],setD=_s[1];
+var oc=useOpenClaw();
 var _userInfo=useState({name:'',role:'',loaded:false}),userInfo=_userInfo[0],setUserInfo=_userInfo[1];
 var _pendingMutations=useState([]),pendingMuts=_pendingMutations[0],setPendingMuts=_pendingMutations[1];
 var _approvalMode=useState('advisory'),approvalMode=_approvalMode[0],setApprovalMode=_approvalMode[1];
@@ -1506,7 +1508,7 @@ var launchSwarm=function(){
 
 var sendAgent=function(){if(!inp.trim()||ld)return;var userTxt=inp.trim();setInp("");
   setMsgs(function(prev){var n=Object.assign({},prev);n[agentId]=(n[agentId]||[]).concat([{role:"user",text:userTxt}]);return n;});
-  setLd(true);
+  // loading handled by oc.loading
 
   var dataSnap="SS:"+D.ss.map(function(s){return s.id+":"+s.name+" "+s.mat+"%";}).join(",")+
   "|Skills:"+D.skills.map(function(s){return s.id+":"+s.name+" "+s.success+"%";}).join(",")+
@@ -1523,13 +1525,9 @@ var sendAgent=function(){if(!inp.trim()||ld)return;var userTxt=inp.trim();setInp
   if(D.pilotDeadlines)dataSnap+="|DEADLINES:"+Object.keys(D.pilotDeadlines).map(function(k){return k+":"+D.pilotDeadlines[k].needBy;}).join(",");
 
   // Backend handles tool_use loop + MCP connections
-  fetch("/api/chat",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({message:userTxt,agentId:agentId,dataContext:dataSnap,mode:approvalMode})
-  })
-  .then(function(r){return r.json();})
-  .then(function(data){
+  oc.sendMessage(agentId,userTxt,{dataContext:dataSnap,mode:approvalMode})
+  .then(function(result){
+    var data={text:result.text,files:result.files||[],toolCalls:result.toolCalls||[],mutations:[],mcpConnected:[],user:null,gateway:{connected:result.via==="gateway"}};
     var text=data.text||"(empty)";
     if(data.mcpConnected&&data.mcpConnected.length>0)setMcpConn(data.mcpConnected);
     if(data.user&&data.user.role&&!userInfo.loaded)setUserInfo({name:data.user.name||'',role:data.user.role||'',loaded:true});
@@ -1559,7 +1557,7 @@ var sendAgent=function(){if(!inp.trim()||ld)return;var userTxt=inp.trim();setInp
   .catch(function(err){
     setMsgs(function(prev){var n=Object.assign({},prev);n[agentId]=(n[agentId]||[]).concat([{role:"ai",text:"Network error: "+String(err)}]);return n;});
   })
-  .finally(function(){setLd(false);});
+  .catch(function(err){setMsgs(function(prev){var n=Object.assign({},prev);n[agentId]=(n[agentId]||[]).concat([{role:"ai",text:"Error: "+String(err)}]);return n;});});
 };
 
 // Page content
