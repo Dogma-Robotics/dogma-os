@@ -977,18 +977,23 @@ return(<div><div style={{display:"flex",justifyContent:"space-between",alignItem
 
 // ── Agents ──
 var AGENTS=[
-  // ── CORE AGENTS (production-ready for DOGMA) ──
-  {id:"planner",name:"Planner",icon:"📐",color:C.gold,cat:"core",desc:"Implementation planner — milestones, critical path, phased execution, risk flags"},
-  {id:"researcher",name:"Researcher",icon:"🔍",color:C.c,cat:"core",desc:"Research — competitive intel, state-of-the-art, technical benchmarks, supplier analysis"},
-  {id:"architect",name:"Architect",icon:"🏗️",color:C.b,cat:"core",desc:"Systems architect — control stack, data flow, subsystem boundaries, ADRs"},
-  {id:"coder",name:"Coder",icon:"💻",color:C.g,cat:"build",desc:"General-purpose coder — Python, C++, ROS 2, firmware, TDD-strict"},
-  {id:"reviewer",name:"Reviewer",icon:"🔎",color:C.a,cat:"build",desc:"Code & design reviewer — correctness, safety, maintainability scoring"},
-  {id:"security-scanner",name:"Security",icon:"🛡️",color:C.r,cat:"build",desc:"Security & safety auditor — ISO compliance, STRIDE, threat modeling"},
-  {id:"coordinator",name:"Coordinator",icon:"🎯",color:C.gold,cat:"core",desc:"Swarm coordinator — synthesis, conflict resolution, executive summary"},
+  {id:"planner",name:"Planner",icon:"📐",color:C.gold,cat:"strategy",desc:"Phased implementation blueprints",access:{shell:true,files:true,browser:true}},
+  {id:"architect",name:"Architect",icon:"🏗",color:C.b,cat:"strategy",desc:"Technology decisions and system design",access:{shell:true,files:true,browser:true}},
+  {id:"researcher",name:"Researcher",icon:"🔍",color:C.c,cat:"strategy",desc:"Deep research with real browser access",access:{shell:true,files:true,browser:true}},
+  {id:"coder",name:"Coder",icon:"💻",color:C.g,cat:"implementation",desc:"Full-stack dev with shell + browser",access:{shell:true,files:true,browser:true}},
+  {id:"data-engineer",name:"Data Eng",icon:"🗄",color:C.c,cat:"implementation",desc:"Schemas, migrations, SQL",access:{shell:true,files:true,browser:false}},
+  {id:"tester",name:"Tester",icon:"🧪",color:C.r,cat:"quality",desc:"Writes and runs tests",access:{shell:true,files:true,browser:true}},
+  {id:"reviewer",name:"Reviewer",icon:"👁",color:C.a,cat:"quality",desc:"Code review (read-only)",access:{shell:true,files:false,browser:false}},
+  {id:"security-scanner",name:"Security",icon:"🔒",color:C.r,cat:"quality",desc:"npm audit, secret scanning",access:{shell:true,files:false,browser:true}},
+  {id:"documenter",name:"Documenter",icon:"📄",color:C.b,cat:"operations",desc:"Reports and docs as real files",access:{shell:true,files:true,browser:true}},
+  {id:"coordinator",name:"Coordinator",icon:"🎯",color:C.gold,cat:"operations",desc:"Synthesizes multi-agent outputs",access:{shell:true,files:true,browser:false}},
+  {id:"devops",name:"DevOps",icon:"🚀",color:C.g,cat:"operations",desc:"CI/CD, deployment, Docker",access:{shell:true,files:true,browser:false}},
 ];
 var AGENT_CATEGORIES=[
-  {id:"core",label:"Core",color:C.gold},
-  {id:"build",label:"Build & Review",color:C.g},
+  {id:"strategy",label:"Strategy",color:C.gold},
+  {id:"implementation",label:"Implementation",color:C.g},
+  {id:"quality",label:"Quality",color:C.r},
+  {id:"operations",label:"Operations",color:C.b},
 ];
 
 export default function Dashboard(){
@@ -1053,16 +1058,7 @@ var _swarmResult=useState(null),swarmResult=_swarmResult[0],setSwarmResult=_swar
 var _swarmLoading=useState(false),swarmLoading=_swarmLoading[0],setSwarmLoading=_swarmLoading[1];
 var _selWorkflow=useState(""),selWorkflow=_selWorkflow[0],setSelWorkflow=_selWorkflow[1];
 var _swarmObjective=useState(""),swarmObjective=_swarmObjective[0],setSwarmObjective=_swarmObjective[1];
-var SWARM_WORKFLOWS=[
-  {id:"pilot-analysis",name:"Pilot Analysis",desc:"Research → Plan → Architect → Review → Coordinate",agents:5,icon:"🏭"},
-  {id:"subsystem-review",name:"Subsystem Review",desc:"Research → Architect → Security → Review → Coordinate",agents:5,icon:"🔬"},
-  {id:"investor-prep",name:"Investor Prep",desc:"Research → Plan → Review → Coordinate",agents:4,icon:"💰"},
-  {id:"incident-response",name:"Incident Response",desc:"Research → Architect → Security → Coordinate",agents:4,icon:"🚨"},
-  {id:"safety-audit",name:"Safety Audit",desc:"Security → Research → Review → Coordinate",agents:4,icon:"🛡️"},
-  {id:"sprint-plan",name:"Sprint Planning",desc:"Plan → Architect → Coordinate",agents:3,icon:"📐"},
-  {id:"incident-response",name:"Incident Response",desc:"Diagnose → Fix → Test → Post-mortem",agents:10,icon:"🚨"},
-  {id:"deploy-pipeline",name:"Deployment",desc:"Build → Test → Security → Deploy → Validate",agents:8,icon:"🔄"},
-];
+var SWARM_WORKFLOWS=[];
 useEffect(function(){
   var onMove=function(e){if(!resizeRef.current)return;var w=window.innerWidth-e.clientX;setChatW(Math.max(240,Math.min(w,window.innerWidth*0.7)));};
   var onUp=function(){resizeRef.current=false;document.body.style.cursor="";document.body.style.userSelect="";};
@@ -1850,7 +1846,7 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
       {/* Mode toggle: Chat / Swarm */}
       <div style={{display:"flex",borderBottom:"1px solid "+C.bd,flexShrink:0}}>
         <div onClick={function(){setMode("chat");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="chat"?C.gold:C.tx3,borderBottom:mode==="chat"?"2px solid "+C.gold:"2px solid transparent",background:mode==="chat"?C.gold+"08":"transparent"}}>💬 Chat</div>
-        <div onClick={function(){setMode("swarm");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="swarm"?C.gold:C.tx3,borderBottom:mode==="swarm"?"2px solid "+C.gold:"2px solid transparent",background:mode==="swarm"?C.gold+"08":"transparent"}}>🐝 Swarm</div>
+        
         <div onClick={function(){setMode("timeline");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="timeline"?C.gold:C.tx3,borderBottom:mode==="timeline"?"2px solid "+C.gold:"2px solid transparent",background:mode==="timeline"?C.gold+"08":"transparent"}}>📊 Timeline</div>
 
 
@@ -1907,7 +1903,7 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
       </>}
 
       {/* ═══ SWARM MODE ═══ */}
-      {mode==="swarm"&&<>
+      {false&&<>
       {/* Workflow selector */}
       <div style={{padding:"10px",borderBottom:"1px solid "+C.bd,flexShrink:0}}>
         <div style={{fontSize:11,color:C.tx3,textTransform:"uppercase",marginBottom:6}}>Select Workflow</div>
