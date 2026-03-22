@@ -1866,8 +1866,8 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
         <div style={{fontSize:11,color:C.tx2,lineHeight:1.4,marginTop:2}}>{curAgent.desc}</div>
         {mcpConn.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:3,marginTop:4}}>{mcpConn.map(function(s,i){return <span key={i} style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.g+"15",color:C.g,border:"1px solid "+C.g+"30",fontWeight:600}}>🔗 {s}</span>;})}</div>}
       </div>
-      <div style={{flex:1,overflowY:"auto",padding:10,display:"flex",flexDirection:"column",gap:4}}>
-        {curMsgs.length===0&&<div style={{fontSize:13,color:C.tx3,textAlign:"center",padding:20}}>Ask {curAgent.name}<br/><span style={{fontSize:11}}>Single agent — direct conversation</span></div>}
+      <div style={{flex:1,overflowY:"auto",padding:0,display:"flex",flexDirection:"column",gap:4}}><iframe id="ocframe" src="http://localhost:18789" style={{width:"100%",flex:1,border:"none",minHeight:400,borderRadius:4}} onError={function(){document.getElementById("ocframe").style.display="none";}}/><div style={{padding:10,display:"flex",flexDirection:"column",gap:4}}>
+        {oc.gateway.connected&&curMsgs.length===0&&<iframe src="http://localhost:18789" style={{width:"100%",height:"100%",border:"none",borderRadius:4}}/>,curMsgs.length===0&&false&&<div style={{fontSize:13,color:C.tx3,textAlign:"center",padding:20}}>Ask {curAgent.name}<br/><span style={{fontSize:11}}>Single agent — direct conversation</span></div>}
         {curMsgs.map(function(msg,i){return <div key={i} style={{maxWidth:"90%",alignSelf:msg.role==="user"?"flex-end":"flex-start"}}><div style={{padding:"6px 10px",borderRadius:6,background:msg.role==="user"?C.bg3:C.bg2,borderLeft:msg.role==="ai"?"2px solid "+curAgent.color:"none",fontSize:13,color:C.tx,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{msg.text}</div>{msg.files&&msg.files.length>0&&msg.files.map(function(f,j){var isH=f.name&&f.name.endsWith(".html");return <div key={j} style={{marginTop:3}}>
 <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 8px",background:C.bg,border:"1px solid "+C.gold+"30",borderRadius:4,cursor:"pointer"}}>
 <span style={{fontSize:16}}>{f.icon||"\uD83D\uDCC1"}</span>
@@ -1876,10 +1876,10 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
 <span onClick={function(){if(f.url&&f.url!=="#"){var dl=document.createElement("a");dl.href=f.url;dl.download=f.name||"file";document.body.appendChild(dl);dl.click();document.body.removeChild(dl);}}} style={{color:C.gold,cursor:"pointer"}}>{"\u2B07"}</span>
 </div></div>;})}</div>;})}
         {ld&&<div style={{fontSize:12,color:curAgent.color,fontStyle:"italic",padding:4}}>{curAgent.name} working...</div>}
-        <div ref={chatEnd}/>
+        <div ref={chatEnd}/></div>
       </div>
       <div style={{padding:"8px 10px",borderTop:"1px solid "+C.bd,display:"flex",gap:4,flexShrink:0}}>
-        <input value={inp} onChange={function(e){setInp(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")sendAgent();}} placeholder={"Ask "+curAgent.name+"..."} style={{flex:1,padding:"6px 10px",fontSize:13,background:C.bg,border:"1px solid "+C.bd,borderRadius:3,color:C.tx,outline:"none"}}/>
+        <input value={inp} onChange={function(e){setInp(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")sendAgent();}} placeholder={oc.gateway.connected?"OpenClaw connected — type below":"Ask "+curAgent.name+"..."} style={{flex:1,padding:"6px 10px",fontSize:13,background:C.bg,border:"1px solid "+C.bd,borderRadius:3,color:C.tx,outline:"none"}}/>
         <Btn v="gold" onClick={sendAgent}>{"\u2191"}</Btn>
       </div>
       {/* Approval Queue */}
