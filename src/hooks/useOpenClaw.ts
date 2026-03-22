@@ -13,8 +13,8 @@ export function useOpenClaw() {
   const checkGateway = useCallback(async () => {
     try {
       const c = new AbortController(); const t = setTimeout(() => c.abort(), 2000)
-      const r = await fetch(`${GW}/api/status`, { signal: c.signal, mode: 'cors' }); clearTimeout(t)
-      if (r.ok) { const d = await r.json(); setGateway({ connected: true, version: d.version||'?', model: d.model||'sonnet' }); return }
+      const r = await fetch(`${GW}/`, { signal: c.signal, mode: 'cors' }); clearTimeout(t)
+      if (r.ok) { setGateway({ connected: true, version: 'local', model: 'openclaw' }); return }
     } catch {}
     setGateway(p => ({ ...p, connected: false }))
   }, [])
