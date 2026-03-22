@@ -1876,7 +1876,7 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
 <span onClick={function(){if(f.url&&f.url!=="#"){var dl=document.createElement("a");dl.href=f.url;dl.download=f.name||"file";document.body.appendChild(dl);dl.click();document.body.removeChild(dl);}}} style={{color:C.gold,cursor:"pointer"}}>{"\u2B07"}</span>
 </div></div>;})}</div>;})}
         {ld&&<div style={{fontSize:12,color:curAgent.color,fontStyle:"italic",padding:4}}>{curAgent.name} working...</div>}
-        <div ref={chatEnd}/></div>
+        <div ref={chatEnd}/>
       </div>
       <div style={{padding:"8px 10px",borderTop:"1px solid "+C.bd,display:"flex",gap:4,flexShrink:0}}>
         <input value={inp} onChange={function(e){setInp(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")sendAgent();}} placeholder={"Ask "+curAgent.name+"..."} style={{flex:1,padding:"6px 10px",fontSize:13,background:C.bg,border:"1px solid "+C.bd,borderRadius:3,color:C.tx,outline:"none"}}/>
