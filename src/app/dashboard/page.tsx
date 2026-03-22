@@ -1044,7 +1044,7 @@ var _con=useState(false),con=_con[0],setCon=_con[1];
 var _search=useState(""),search=_search[0],setSearch=_search[1];
 var _searchOpen=useState(false),searchOpen=_searchOpen[0],setSearchOpen=_searchOpen[1];
 var _chatW=useState(600),chatW=_chatW[0],setChatW=_chatW[1];
-useEffect(function(){setChatW(Math.round(window.innerWidth*0.5));},[]);
+useEffect(function(){setChatW(Math.round(window.innerWidth*0.33));},[]);
 var resizeRef=useRef(null);
 var _mode=useState("chat"),mode=_mode[0],setMode=_mode[1]; // "chat" or "swarm" or "timeline" or "approvals"
 var _cmdOpen=useState(false),cmdOpen=_cmdOpen[0],setCmdOpen=_cmdOpen[1];
@@ -1852,8 +1852,7 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
         <div onClick={function(){setMode("chat");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="chat"?C.gold:C.tx3,borderBottom:mode==="chat"?"2px solid "+C.gold:"2px solid transparent",background:mode==="chat"?C.gold+"08":"transparent"}}>💬 Chat</div>
         <div onClick={function(){setMode("swarm");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="swarm"?C.gold:C.tx3,borderBottom:mode==="swarm"?"2px solid "+C.gold:"2px solid transparent",background:mode==="swarm"?C.gold+"08":"transparent"}}>🐝 Swarm</div>
         <div onClick={function(){setMode("timeline");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="timeline"?C.gold:C.tx3,borderBottom:mode==="timeline"?"2px solid "+C.gold:"2px solid transparent",background:mode==="timeline"?C.gold+"08":"transparent"}}>📊 Timeline</div>
-        <div onClick={function(){setMode("map");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="map"?C.gold:C.tx3,borderBottom:mode==="map"?"2px solid "+C.gold:"2px solid transparent",background:mode==="map"?C.gold+"08":"transparent"}}>🗺️ Map</div>
-        <div onClick={function(){setMode("mission");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="mission"?C.gold:C.tx3,borderBottom:mode==="mission"?"2px solid "+C.gold:"2px solid transparent",background:mode==="mission"?C.gold+"08":"transparent"}}>🎯 Mission</div>
+
 
         <div onClick={function(){setMode("approvals");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="approvals"?C.gold:C.tx3,borderBottom:mode==="approvals"?"2px solid "+C.gold:"2px solid transparent",background:mode==="approvals"?C.gold+"08":"transparent"}}>{pendingMuts.length>0?"⚠️":"✅"} Queue{pendingMuts.length>0?" ("+pendingMuts.length+")":""}</div>
       </div>
