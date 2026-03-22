@@ -43,8 +43,8 @@ async function buildCtx(orgId:string):Promise<string> {
       sb.from('finance_snapshots').select('burn_rate,runway_months').eq('organization_id',orgId).order('month',{ascending:false}).limit(1),
     ])
     const p=['DOGMA Robotics']
-    if(ss?.length) p.push('SS: '+ss.map(s=>`${s.name}(${s.maturity_level}%)`).join(', '))
-    if(tasks?.length) p.push('Tasks: '+tasks.map(t=>`[${t.priority}]${t.title}`).join(', '))
+    if(ss?.length) p.push('SS: '+ss.map((s:any)=>`${s.name}(${s.maturity_level}%)`).join(', '))
+    if(tasks?.length) p.push('Tasks: '+tasks.map((t:any)=>`[${t.priority}]${t.title}`).join(', '))
     if(fin?.[0]) p.push(`Fin: burn $${fin[0].burn_rate}/mo, runway ${fin[0].runway_months}mo`)
     return p.join('\n')
   } catch { return '' }
