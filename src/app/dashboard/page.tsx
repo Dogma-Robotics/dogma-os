@@ -1537,7 +1537,7 @@ var sendAgent=function(){if(!inp.trim()||ld)return;var userTxt=inp.trim();setInp
       setPendingMuts(function(prev){return prev.concat(mutations.map(function(m){return Object.assign({},m,{status:"pending",at:nw(),agent:agentId});}));});
       text+="\\n\\n\uD83D\uDD12 "+mutations.length+" mutation(s) proposed (advisory mode). Review in approval queue.";
     }
-    setMsgs(function(prev){var n=Object.assign({},prev);n[agentId]=(n[agentId]||[]).concat([{role:"ai",text:text,files:files,mutations:mutations}]);return n;});
+    setMsgs(function(prev){var n=Object.assign({},prev);n[agentId]=(n[agentId]||[]).concat([{role:"ai",via:result.via||"vercel",text:text,files:files,mutations:mutations}]);return n;});
     // If agent made data mutations, refresh local state from Supabase
     if(mutations.length>0){
       fetch("/api/dashboard/summary").then(function(r){return r.json();}).then(function(data){
@@ -1862,20 +1862,20 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
         </div>;})}
       </div>
       <div style={{padding:"8px 10px",borderBottom:"1px solid "+C.bd,flexShrink:0}}>
-        <div style={{fontSize:13,fontWeight:700,color:curAgent.color}}>{curAgent.icon} {curAgent.name}</div>
+        <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{fontSize:13,fontWeight:700,color:curAgent.color}}>{curAgent.icon} {curAgent.name}</div><div style={{display:"flex",alignItems:"center",gap:4,padding:"2px 8px",borderRadius:3,background:oc.gateway.connected?"rgba(45,122,93,0.1)":"rgba(138,51,51,0.1)",border:"1px solid "+(oc.gateway.connected?"rgba(45,122,93,0.25)":"rgba(138,51,51,0.25)")}}><span style={{width:6,height:6,borderRadius:"50%",background:oc.gateway.connected?"#2D7A5D":"#8A3333"}}/><span style={{fontSize:9,fontWeight:700,color:oc.gateway.connected?"#2D7A5D":"#8A3333"}}>{oc.gateway.connected?"OpenClaw":"Cloud"}</span></div></div>
         <div style={{fontSize:11,color:C.tx2,lineHeight:1.4,marginTop:2}}>{curAgent.desc}</div>
         {mcpConn.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:3,marginTop:4}}>{mcpConn.map(function(s,i){return <span key={i} style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.g+"15",color:C.g,border:"1px solid "+C.g+"30",fontWeight:600}}>🔗 {s}</span>;})}</div>}
       </div>
       <div style={{flex:1,overflowY:"auto",padding:10,display:"flex",flexDirection:"column",gap:4}}>
         {curMsgs.length===0&&<div style={{fontSize:13,color:C.tx3,textAlign:"center",padding:20}}>Ask {curAgent.name}<br/><span style={{fontSize:11}}>Single agent — direct conversation</span></div>}
-        {curMsgs.map(function(msg,i){return <div key={i} style={{maxWidth:"90%",alignSelf:msg.role==="user"?"flex-end":"flex-start"}}><div style={{padding:"6px 10px",borderRadius:6,background:msg.role==="user"?C.bg3:C.bg2,borderLeft:msg.role==="ai"?"2px solid "+curAgent.color:"none",fontSize:13,color:C.tx,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{msg.text}</div>{msg.files&&msg.files.length>0&&msg.files.map(function(f,j){var isH=f.name&&f.name.endsWith(".html");return <div key={j} style={{marginTop:3}}>
+        {curMsgs.map(function(msg,i){return <div key={i} style={{maxWidth:"90%",alignSelf:msg.role==="user"?"flex-end":"flex-start"}}><div style={{padding:"6px 10px",borderRadius:6,background:msg.role==="user"?C.bg3:C.bg2,borderLeft:msg.role==="ai"?"2px solid "+(msg.via==="gateway"?"#2D7A5D":curAgent.color):"none",fontSize:13,color:C.tx,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{msg.text}</div>{msg.files&&msg.files.length>0&&msg.files.map(function(f,j){var isH=f.name&&f.name.endsWith(".html");return <div key={j} style={{marginTop:3}}>
 <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 8px",background:C.bg,border:"1px solid "+C.gold+"30",borderRadius:4,cursor:"pointer"}}>
 <span style={{fontSize:16}}>{f.icon||"\uD83D\uDCC1"}</span>
 <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>{f.name}</div></div>
 {isH&&f.url&&<span onClick={function(e){e.stopPropagation();window.open(f.url,"_blank");}} style={{fontSize:9,color:C.gold,padding:"2px 6px",border:"1px solid "+C.gold+"25",borderRadius:3,cursor:"pointer"}}>Preview</span>}
 <span onClick={function(){if(f.url&&f.url!=="#"){var dl=document.createElement("a");dl.href=f.url;dl.download=f.name||"file";document.body.appendChild(dl);dl.click();document.body.removeChild(dl);}}} style={{color:C.gold,cursor:"pointer"}}>{"\u2B07"}</span>
 </div></div>;})}</div>;})}
-        {ld&&<div style={{fontSize:12,color:curAgent.color,fontStyle:"italic",padding:4}}>{curAgent.name} working...</div>}
+        {(ld||oc.loading)&&<div style={{fontSize:12,color:curAgent.color,fontStyle:"italic",padding:4}}>{curAgent.name} {oc.gateway.connected?"(via OpenClaw)":"(cloud)"}...</div>}
         <div ref={chatEnd}/>
       </div>
       <div style={{padding:"8px 10px",borderTop:"1px solid "+C.bd,display:"flex",gap:4,flexShrink:0}}>
