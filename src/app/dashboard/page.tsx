@@ -1848,7 +1848,7 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
       {/* Mode toggle: Chat / Swarm */}
-      <div style={{display:"flex",borderBottom:"1px solid "+C.bd,flexShrink:0}}>
+      <div style={{display:"flex",borderBottom:"1px solid "+C.bd,flexShrink:0,position:"relative"}}><div onClick={function(){setIsDark(function(d){return !d;});}} style={{position:"absolute",right:8,top:5,cursor:"pointer",fontSize:9,padding:"2px 8px",borderRadius:3,background:C.bg3,color:C.tx2,border:"1px solid "+C.bd,zIndex:5}}>{isDark?"Light":"Dark"}</div>
         <div onClick={function(){setMode("chat");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="chat"?C.gold:C.tx3,borderBottom:mode==="chat"?"2px solid "+C.gold:"2px solid transparent",background:mode==="chat"?C.gold+"08":"transparent"}}>💬 Chat</div>
         
         <div onClick={function(){setMode("timeline");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="timeline"?C.gold:C.tx3,borderBottom:mode==="timeline"?"2px solid "+C.gold:"2px solid transparent",background:mode==="timeline"?C.gold+"08":"transparent"}}>📊 Timeline</div>
