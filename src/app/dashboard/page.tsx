@@ -1980,7 +1980,7 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
       </>}
 
 
-      {mode==="openclaw"&&<div style={{flex:1,overflowY:"auto",padding:12}}>
+      >
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
           <div style={{width:10,height:10,borderRadius:"50%",background:C.g,boxShadow:"0 0 8px rgba(45,122,93,0.5)"}}/>
           <div style={{fontSize:15,fontWeight:700,color:C.gold}}>OpenClaw Gateway</div>
@@ -2064,6 +2064,171 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
         <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
           {["Run my test suite","Audit npm dependencies","Review the auth code","Write a status report","Research McKibben actuator suppliers","Plan next sprint","Check Vercel deployment","Generate investor update"].map(function(action){return <div key={action} onClick={function(){setMode("chat");setInp(action);}} style={{padding:"6px 10px",fontSize:11,borderRadius:3,cursor:"pointer",background:C.bg2,color:C.tx,border:"1px solid "+C.bd,transition:"all 0.15s"}}>{action}</div>;})}
         </div>
+      </div>}
+
+
+      {mode==="openclaw"&&<div style={{flex:1,overflowY:"auto",padding:14}}>
+
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+          <div style={{width:10,height:10,borderRadius:"50%",background:C.g,boxShadow:"0 0 8px rgba(45,122,93,0.5)"}}/>
+          <div style={{fontSize:16,fontWeight:700,color:C.gold}}>OpenClaw Runtime</div>
+        </div>
+        <div style={{fontSize:11,color:C.tx2,lineHeight:1.6,marginBottom:16}}>Open-source AI agent runtime (100K+ GitHub stars, MIT licensed). Runs on your machine. Agents have real computer access: terminal, browser, files, network. Every chat message routes through the gateway at localhost:18789.</div>
+
+        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Terminal Access</div>
+        <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd,marginBottom:6}}>
+          <div style={{fontSize:12,color:C.tx,lineHeight:1.7}}>Agents can run any shell command on your machine. This includes:</div>
+          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:C.gold,marginTop:6,lineHeight:1.8}}>
+            npm test / npm run build / npm audit<br/>
+            python3 script.py / pip install<br/>
+            git status / git diff / git commit<br/>
+            docker ps / docker-compose up<br/>
+            psql -U postgres -d dogma<br/>
+            curl -s https://api.example.com<br/>
+            find . -name "*.ts" | xargs grep "TODO"<br/>
+            ssh user@server "deploy.sh"
+          </div>
+        </div>
+
+        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8,marginTop:14}}>Browser Automation</div>
+        <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd,marginBottom:6}}>
+          <div style={{fontSize:12,color:C.tx,lineHeight:1.7}}>Dedicated Chrome instance controlled via CDP (Chrome DevTools Protocol):</div>
+          <div style={{fontSize:11,color:C.tx2,marginTop:6,lineHeight:1.8}}>
+            Navigate to any URL, take screenshots, extract content<br/>
+            Fill forms, click buttons, submit data<br/>
+            Scrape competitor websites and pricing pages<br/>
+            Read documentation, papers, datasheets<br/>
+            Test your web UIs end-to-end<br/>
+            Monitor dashboards and alert on changes<br/>
+            Download files, PDFs, datasets
+          </div>
+        </div>
+
+        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8,marginTop:14}}>File System</div>
+        <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd,marginBottom:6}}>
+          <div style={{fontSize:12,color:C.tx,lineHeight:1.7}}>Full read/write access to your project files:</div>
+          <div style={{fontSize:11,color:C.tx2,marginTop:6,lineHeight:1.8}}>
+            Read and edit source code (TypeScript, Python, C++, YAML)<br/>
+            Create new files, modules, components from scratch<br/>
+            Generate HTML reports with DOGMA branding<br/>
+            Export data as CSV, JSON, Markdown, LaTeX<br/>
+            Write SQL migrations, Dockerfiles, CI configs<br/>
+            Edit .env files, package.json, tsconfig.json<br/>
+            Create and manage SKILL.md files for new capabilities
+          </div>
+        </div>
+
+        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8,marginTop:14}}>Agent Architecture</div>
+        <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:6}}>
+          <div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.tx}}>SOUL.md</div>
+            <div style={{fontSize:11,color:C.tx2,lineHeight:1.6}}>Plain Markdown file defining who the agent is. Version-controllable. DOGMA agents have a custom SOUL.md with Genesis Hand context, subsystem knowledge, and company data.</div>
+          </div>
+          <div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.tx}}>SKILL.md Modules</div>
+            <div style={{fontSize:11,color:C.tx2,lineHeight:1.6}}>Modular capability files with YAML frontmatter. 5,400+ community skills on ClawHub. Install with one command. Each skill declares what tools it needs and when to activate.</div>
+          </div>
+          <div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.tx}}>MEMORY.md</div>
+            <div style={{fontSize:11,color:C.tx2,lineHeight:1.6}}>Long-term memory persisted as Markdown. Agent remembers your project structure, past decisions, coding patterns, and preferences across sessions. Embedding-based semantic search for recall.</div>
+          </div>
+          <div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.tx}}>Session Transcripts</div>
+            <div style={{fontSize:11,color:C.tx2,lineHeight:1.6}}>Every conversation stored as JSONL. Context compaction summarizes old turns when the window fills. Resume any conversation where you left off.</div>
+          </div>
+        </div>
+
+        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8,marginTop:14}}>Security Model</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginBottom:6}}>
+          <div style={{padding:"8px 10px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}>
+            <div style={{fontSize:11,fontWeight:600,color:C.tx}}>Token Auth</div>
+            <div style={{fontSize:10,color:C.tx2}}>Bearer token required for all API calls</div>
+          </div>
+          <div style={{padding:"8px 10px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}>
+            <div style={{fontSize:11,fontWeight:600,color:C.tx}}>Loopback Only</div>
+            <div style={{fontSize:10,color:C.tx2}}>Gateway binds to 127.0.0.1 by default</div>
+          </div>
+          <div style={{padding:"8px 10px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}>
+            <div style={{fontSize:11,fontWeight:600,color:C.tx}}>Tool Allowlists</div>
+            <div style={{fontSize:10,color:C.tx2}}>Per-agent glob patterns for permitted tools</div>
+          </div>
+          <div style={{padding:"8px 10px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}>
+            <div style={{fontSize:11,fontWeight:600,color:C.tx}}>Approval Flow</div>
+            <div style={{fontSize:10,color:C.tx2}}>Sensitive actions require human approval</div>
+          </div>
+          <div style={{padding:"8px 10px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}>
+            <div style={{fontSize:11,fontWeight:600,color:C.tx}}>Audit Log</div>
+            <div style={{fontSize:10,color:C.tx2}}>Every tool execution logged with full context</div>
+          </div>
+          <div style={{padding:"8px 10px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}>
+            <div style={{fontSize:11,fontWeight:600,color:C.tx}}>VirusTotal Scan</div>
+            <div style={{fontSize:10,color:C.tx2}}>Community skills scanned for malware</div>
+          </div>
+        </div>
+
+        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8,marginTop:14}}>Multi-Channel</div>
+        <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd,marginBottom:6}}>
+          <div style={{fontSize:12,color:C.tx,lineHeight:1.7}}>Same agent, any channel. All connected to the same gateway:</div>
+          <div style={{fontSize:11,color:C.tx2,marginTop:6,lineHeight:1.8}}>
+            WhatsApp, Telegram, Slack, Discord, Signal, iMessage<br/>
+            Google Chat, Microsoft Teams, Matrix, IRC, LINE<br/>
+            WebChat (this dashboard), macOS menu bar app<br/>
+            iOS/Android companion apps with voice + camera<br/>
+            CLI: openclaw chat / openclaw message send
+          </div>
+        </div>
+
+        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8,marginTop:14}}>Advanced Features</div>
+        <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:6}}>
+          <div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.tx}}>Canvas (A2UI)</div>
+            <div style={{fontSize:11,color:C.tx2}}>Agent pushes live interactive HTML to a visual workspace. Dashboards, data viz, UI previews rendered in real time.</div>
+          </div>
+          <div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.tx}}>Heartbeat Daemon</div>
+            <div style={{fontSize:11,color:C.tx2}}>Configurable background scheduler. Agent runs proactive tasks: check CI status, monitor services, send daily digests.</div>
+          </div>
+          <div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.tx}}>Model Agnostic</div>
+            <div style={{fontSize:11,color:C.tx2}}>Claude, GPT, Gemini, Llama, Ollama, or any OpenAI-compatible endpoint. Switch with one config change. Automatic failover chain.</div>
+          </div>
+          <div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.tx}}>Voice Mode</div>
+            <div style={{fontSize:11,color:C.tx2}}>Wake words on macOS/iOS. Continuous voice on Android. ElevenLabs TTS with system fallback.</div>
+          </div>
+          <div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}>
+            <div style={{fontSize:12,fontWeight:600,color:C.tx}}>Cron Jobs</div>
+            <div style={{fontSize:11,color:C.tx2}}>Schedule recurring tasks: run tests every hour, check deployment health, generate weekly reports, sync data.</div>
+          </div>
+        </div>
+
+        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8,marginTop:14}}>DOGMA Agents</div>
+        <div style={{display:"flex",flexDirection:"column",gap:3,marginBottom:16}}>
+          {AGENTS.map(function(a){return <div key={a.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd,cursor:"pointer"}} onClick={function(){setAgentId(a.id);setMode("chat");}}>
+            <span style={{fontSize:15}}>{a.icon}</span>
+            <div style={{flex:1}}>
+              <div style={{fontSize:12,fontWeight:600,color:a.color}}>{a.name}</div>
+              <div style={{fontSize:10,color:C.tx2}}>{a.desc}</div>
+            </div>
+            <div style={{display:"flex",gap:2}}>
+              {a.access&&a.access.shell&&<span style={{fontSize:7,padding:"1px 4px",borderRadius:2,background:C.gold+"10",color:C.gold}}>shell</span>}
+              {a.access&&a.access.browser&&<span style={{fontSize:7,padding:"1px 4px",borderRadius:2,background:C.b+"10",color:C.b}}>browser</span>}
+              {a.access&&a.access.files&&<span style={{fontSize:7,padding:"1px 4px",borderRadius:2,background:C.g+"10",color:C.g}}>files</span>}
+            </div>
+          </div>;})}
+        </div>
+
+        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Try it now</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:20}}>
+          {["Run npm test and show results","npm audit --fix my dependencies","Read src/lib/auth.ts and review for security issues","Write a status report for investors as HTML","Research latest McKibben pneumatic actuator papers","Create a sprint plan for the next 2 weeks","Check if Vercel deployment is healthy","Generate CSV export of all open tasks","Find ISO/TS 15066 compliance gaps in our codebase","Set up a Docker container for ROS 2 Jazzy"].map(function(action){return <div key={action} onClick={function(){setMode("chat");setInp(action);}} style={{padding:"5px 10px",fontSize:10,borderRadius:3,cursor:"pointer",background:C.bg3,color:C.tx2,border:"1px solid "+C.bd}}>{action}</div>;})}
+        </div>
+
+        <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.gold+"20",marginBottom:10}}>
+          <div style={{fontSize:11,color:C.tx2,lineHeight:1.6}}>
+            <span style={{color:C.gold,fontWeight:600}}>How it works:</span> Your message goes from this dashboard to the Next.js API route, which proxies it to the OpenClaw gateway at localhost:18789 via the /v1/chat/completions endpoint. The gateway runs the agent with full computer access. If the gateway is offline, it falls back to Claude API directly (text only, no execution).
+          </div>
+        </div>
+
       </div>}
 
       {/* ═══ TIMELINE MODE ═══ */}
