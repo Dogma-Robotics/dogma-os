@@ -1053,7 +1053,7 @@ var _searchOpen=useState(false),searchOpen=_searchOpen[0],setSearchOpen=_searchO
 var _chatW=useState(600),chatW=_chatW[0],setChatW=_chatW[1];
 useEffect(function(){setChatW(Math.round(window.innerWidth*0.33));},[]);
 var resizeRef=useRef(null);
-var _mode=useState("openclaw"),mode=_mode[0],setMode=_mode[1]; // "chat" or "swarm" or "timeline" or "approvals"
+var _mode=useState("chat"),mode=_mode[0],setMode=_mode[1]; // "chat" or "swarm" or "timeline" or "approvals"
 var _cmdOpen=useState(false),cmdOpen=_cmdOpen[0],setCmdOpen=_cmdOpen[1];
 var _cmdQ=useState(""),cmdQ=_cmdQ[0],setCmdQ=_cmdQ[1];
 var _swarmResult=useState(null),swarmResult=_swarmResult[0],setSwarmResult=_swarmResult[1];
@@ -1843,7 +1843,6 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
 
       {/* Mode toggle: Chat / Swarm */}
       <div style={{display:"flex",borderBottom:"1px solid "+C.bd,flexShrink:0}}>
-        <div onClick={function(){setMode("openclaw");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="openclaw"?"#C8A74B":"#444060",borderBottom:mode==="openclaw"?"2px solid #C8A74B":"2px solid transparent",background:mode==="openclaw"?"rgba(200,167,75,0.03)":"transparent"}}>OpenClaw</div>
         <div onClick={function(){setMode("chat");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="chat"?C.gold:C.tx3,borderBottom:mode==="chat"?"2px solid "+C.gold:"2px solid transparent",background:mode==="chat"?C.gold+"08":"transparent"}}>💬 Chat</div>
         
         <div onClick={function(){setMode("timeline");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="timeline"?C.gold:C.tx3,borderBottom:mode==="timeline"?"2px solid "+C.gold:"2px solid transparent",background:mode==="timeline"?C.gold+"08":"transparent"}}>📊 Timeline</div>
@@ -1853,8 +1852,6 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
       </div>
 
       {/* ═══ CHAT MODE ═══ */}
-      {mode==="openclaw"&&<div style={{flex:1,display:"flex",flexDirection:"column"}}><iframe src="http://localhost:18789" style={{flex:1,width:"100%",border:"none"}}/></div>}
-
       {mode==="chat"&&<>
       <div style={{padding:"6px 8px",borderBottom:"1px solid "+C.bd,flexShrink:0,maxHeight:160,overflowY:"auto"}}>
         {AGENT_CATEGORIES.map(function(cat){var catAgents=AGENTS.filter(function(a){return a.cat===cat.id;});return <div key={cat.id} style={{marginBottom:4}}>
