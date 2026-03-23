@@ -1053,7 +1053,7 @@ var _searchOpen=useState(false),searchOpen=_searchOpen[0],setSearchOpen=_searchO
 var _chatW=useState(600),chatW=_chatW[0],setChatW=_chatW[1];
 useEffect(function(){setChatW(Math.round(window.innerWidth*0.33));},[]);
 var resizeRef=useRef(null);
-var _mode=useState("openclaw"),mode=_mode[0],setMode=_mode[1]; // "chat" or "swarm" or "timeline" or "approvals"
+var _mode=useState("chat"),mode=_mode[0],setMode=_mode[1]; // "chat" or "swarm" or "timeline" or "approvals"
 var _cmdOpen=useState(false),cmdOpen=_cmdOpen[0],setCmdOpen=_cmdOpen[1];
 var _cmdQ=useState(""),cmdQ=_cmdQ[0],setCmdQ=_cmdQ[1];
 var _swarmResult=useState(null),swarmResult=_swarmResult[0],setSwarmResult=_swarmResult[1];
@@ -1537,7 +1537,7 @@ var sendAgent=function(){if(!inp.trim()||ld)return;var userTxt=inp.trim();setInp
       setPendingMuts(function(prev){return prev.concat(mutations.map(function(m){return Object.assign({},m,{status:"pending",at:nw(),agent:agentId});}));});
       text+="\\n\\n\uD83D\uDD12 "+mutations.length+" mutation(s) proposed (advisory mode). Review in approval queue.";
     }
-    setMsgs(function(prev){var n=Object.assign({},prev);n[agentId]=(n[agentId]||[]).concat([{role:"ai",text:text,files:files,mutations:mutations}]);return n;});
+    setMsgs(function(prev){var n=Object.assign({},prev);n[agentId]=(n[agentId]||[]).concat([{role:"ai",via:(data.gateway&&data.gateway.connected)?"openclaw":"cloud",text:text,files:files,mutations:mutations}]);return n;});
     // If agent made data mutations, refresh local state from Supabase
     if(mutations.length>0){
       fetch("/api/dashboard/summary").then(function(r){return r.json();}).then(function(data){
@@ -1843,7 +1843,6 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
 
       {/* Mode toggle: Chat / Swarm */}
       <div style={{display:"flex",borderBottom:"1px solid "+C.bd,flexShrink:0}}>
-        <div onClick={function(){setMode("openclaw");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="openclaw"?"#C8A74B":"#444060",borderBottom:mode==="openclaw"?"2px solid #C8A74B":"2px solid transparent",background:mode==="openclaw"?"rgba(200,167,75,0.03)":"transparent"}}>OpenClaw</div>
         <div onClick={function(){setMode("chat");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="chat"?C.gold:C.tx3,borderBottom:mode==="chat"?"2px solid "+C.gold:"2px solid transparent",background:mode==="chat"?C.gold+"08":"transparent"}}>💬 Chat</div>
         
         <div onClick={function(){setMode("timeline");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="timeline"?C.gold:C.tx3,borderBottom:mode==="timeline"?"2px solid "+C.gold:"2px solid transparent",background:mode==="timeline"?C.gold+"08":"transparent"}}>📊 Timeline</div>
@@ -1869,7 +1868,7 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
       </div>
       <div style={{flex:1,overflowY:"auto",padding:10,display:"flex",flexDirection:"column",gap:4}}>
         {curMsgs.length===0&&<div style={{fontSize:13,color:C.tx3,textAlign:"center",padding:20}}>Ask {curAgent.name}<br/><span style={{fontSize:11}}>Single agent — direct conversation</span></div>}
-        {curMsgs.map(function(msg,i){return <div key={i} style={{maxWidth:"90%",alignSelf:msg.role==="user"?"flex-end":"flex-start"}}><div style={{padding:"6px 10px",borderRadius:6,background:msg.role==="user"?C.bg3:C.bg2,borderLeft:msg.role==="ai"?"2px solid "+curAgent.color:"none",fontSize:13,color:C.tx,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{msg.text}</div>{msg.files&&msg.files.length>0&&msg.files.map(function(f,j){var isH=f.name&&f.name.endsWith(".html");return <div key={j} style={{marginTop:3}}>
+        {curMsgs.map(function(msg,i){return <div key={i} style={{maxWidth:"90%",alignSelf:msg.role==="user"?"flex-end":"flex-start"}}><div style={{padding:"6px 10px",borderRadius:6,background:msg.role==="user"?C.bg3:C.bg2,borderLeft:msg.role==="ai"?"2px solid "+(msg.via==="openclaw"?"#2D7A5D":curAgent.color):"none",fontSize:13,color:C.tx,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{msg.text}</div>{msg.files&&msg.files.length>0&&msg.files.map(function(f,j){var isH=f.name&&f.name.endsWith(".html");return <div key={j} style={{marginTop:3}}>
 <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 8px",background:C.bg,border:"1px solid "+C.gold+"30",borderRadius:4,cursor:"pointer"}}>
 <span style={{fontSize:16}}>{f.icon||"\uD83D\uDCC1"}</span>
 <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>{f.name}</div></div>
