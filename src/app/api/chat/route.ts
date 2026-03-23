@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     if (agent === undefined) return NextResponse.json({ text: `Unknown agent: ${agentId}`, files: [], toolCalls: [] })
     if (canUseAgent(ctx, agentId) === false) return NextResponse.json({ text: 'Permission denied', files: [], toolCalls: [] })
     const domainCtx = dataContext || await buildCtx(ctx.organizationId)
-    const sys = agent.soulPrompt + '\nCLOUD FALLBACK — no computer access. Reason + plan only. For execution: openclaw gateway run' + (domainCtx ? '\n--- DOGMA CONTEXT ---\n'+domainCtx : '')
+    const sys = agent.soulPrompt + '\nYou are a DOGMA Robotics AI agent. Help with planning, analysis, code, research, and strategy. Be direct and useful.' + (domainCtx ? '\n--- DOGMA CONTEXT ---\n'+domainCtx : '')
     if (API_KEY === '') return NextResponse.json({ text: 'Set ANTHROPIC_API_KEY in Vercel env vars.', files: [], toolCalls: [] })
     const t0 = Date.now()
     const res = await fetch('https://api.anthropic.com/v1/messages', {
