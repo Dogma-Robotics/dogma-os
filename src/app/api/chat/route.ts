@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     // Try OpenClaw gateway (server-to-server, no CORS)
     try {
-      const sysMsg = agent.soulPrompt + '\nYou are a DOGMA Robotics AI agent. You have full computer access via OpenClaw: shell, browser, files. Be direct and execute tasks.' + (domainCtx ? '\n--- DOGMA CONTEXT ---\n' + domainCtx : '')
+      const sysMsg = agent.soulPrompt + '\nYou are a DOGMA Robotics AI agent. You have full computer access via OpenClaw: shell, browser, files. Be direct and execute tasks.\n\nVM ACCESS: You have SSH access to an Ubuntu VM running ROS 2 Jazzy. To run commands on the VM, use: ssh vm \"<command>\"\nExamples:\n- ssh vm \"ros2 topic list\"\n- ssh vm \"ros2 node list\"\n- ssh vm \"cd ~/ros2_ws && colcon build\"\n- ssh vm \"cat /home/jeroortiz/ros2_ws/src/some_file.py\"\n- ssh vm \"sudo apt install <package>\"\nThe VM is at 192.168.64.2, user jeroortiz, SSH key auth configured. Use this for all ROS 2, firmware, and robotics tasks.' + (domainCtx ? '\n--- DOGMA CONTEXT ---\n' + domainCtx : '')
       const ocRes = await fetch(OC_URL + '/v1/chat/completions', {
         method: 'POST',
         headers: {
