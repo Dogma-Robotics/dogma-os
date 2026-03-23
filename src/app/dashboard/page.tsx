@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useOpenClaw } from '@/hooks/useOpenClaw';
 var THREE = typeof window !== "undefined" ? require("three") : null;
 
-function getTheme(dark){return dark?{bg:"#030308",bg1:"#060610",bg2:"#0A0A18",bg3:"#0E0E20",bd:"#1A1A35",gold:"#C8A74B",gD:"rgba(200,167,75,0.06)",tx:"#C8C4BC",tx2:"#6E6A84",tx3:"#444060",g:"#2D7A5D",r:"#8A3333",a:"#A78530",b:"#3A5A7A",c:"#3A7A7A"}:{bg:"#FFFFFF",bg1:"#F8F7F4",bg2:"#F0EFE8",bg3:"#E8E6DE",bd:"#D5D3C8",gold:"#9A7B2E",gD:"rgba(154,123,46,0.06)",tx:"#1A1A2E",tx2:"#5C5878",tx3:"#9994B0",g:"#1B6B4A",r:"#A33333",a:"#8A6A1E",b:"#2A4A6A",c:"#2A6A6A"};}
+function getTheme(dark){return dark?{bg:"#030308",bg1:"#060610",bg2:"#0A0A18",bg3:"#0E0E20",bd:"#1A1A35",gold:"#C8A74B",gD:"rgba(200,167,75,0.06)",tx:"#C8C4BC",tx2:"#6E6A84",tx3:"#444060",g:"#2D7A5D",r:"#8A3333",a:"#A78530",b:"#3A5A7A",c:"#3A7A7A"}:{bg:"#E8E6DE",bg1:"#DEDAD0",bg2:"#D5D3C8",bg3:"#CCCAC0",bd:"#B8B6AC",gold:"#9A7B2E",gD:"rgba(154,123,46,0.06)",tx:"#1A1A2E",tx2:"#5C5878",tx3:"#9994B0",g:"#1B6B4A",r:"#A33333",a:"#8A6A1E",b:"#2A4A6A",c:"#2A6A6A"};}
 var C=getTheme(true);
 var nw=function(){return new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});};
 var dy=function(){return new Date().toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});};
