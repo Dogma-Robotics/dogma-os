@@ -2035,7 +2035,7 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
           <span onClick={function(){oc.checkGateway();}} style={{fontSize:9,color:C.tx3,cursor:"pointer",padding:"2px 6px",border:"1px solid "+C.bd,borderRadius:3}}>Retry</span>
         </div>
         {oc.gateway.connected?
-          <iframe src="http://localhost:18789" style={{flex:1,border:"none",width:"100%",background:C.bg}} allow="clipboard-read; clipboard-write"/>
+          <iframe src="/api/openclaw" style={{flex:1,border:"none",width:"100%",background:C.bg}} allow="clipboard-read; clipboard-write"/>
           :<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
             <div style={{textAlign:"center",maxWidth:300}}>
               <div style={{fontSize:48,marginBottom:12}}>🦞</div>
