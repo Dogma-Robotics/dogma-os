@@ -190,8 +190,7 @@ function getBlockedBy(entityId,deps){
 function getBlocks(entityId,deps){
   return(deps||[]).filter(function(d){return d.from===entityId;});
 }
-var NODES=buildNodes3D(NODE_TREE);
-var LINKS=buildLinks3D(NODES);
+// NODES and LINKS are now computed inside Dashboard via useMemo on liveTree
 
 function getSubs(pid,D){var R=3.5;var items=[];
 if(pid==="rd"){items=D.ss.map(function(s){return{id:s.id,label:s.name,metric:s.mat+"%",color:dc(s.status),r:0.45,type:"ss",data:s};}).concat(D.skills.map(function(s){return{id:s.id,label:s.name,metric:s.success+"%",color:dc(s.status),r:0.45,type:"skill",data:s};}));}
@@ -646,35 +645,42 @@ return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}
 if(nid==="team"){var doneCount=D.tasks.filter(function(t){return t.status==="done";}).length;var avgPct=D.tasks.length?Math.round(D.tasks.reduce(function(a,t){return a+(t.pct||0);},0)/D.tasks.length):0;return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Task Board</div><Row label="Total" value={D.tasks.length}/><Row label="Critical" value={cr} color={cr?C.r:C.g}/><Row label="Done" value={doneCount+"/"+D.tasks.length} color={C.g}/><Row label="Avg Completion" value={avgPct+"%"} color={avgPct>60?C.g:C.a}/><div style={{marginTop:6,marginBottom:12}}><div style={{height:8,background:C.bd,borderRadius:4,overflow:"hidden"}}><div style={{width:avgPct+"%",height:"100%",background:avgPct>=80?C.g:avgPct>=40?C.gold:C.a,borderRadius:4,transition:"width 0.3s"}}/></div></div>{canEdit&&<div style={{marginBottom:10}}><Btn v="gold" onClick={function(){setShowCreate({type:"tasks"});}}>+ New Task</Btn></div>}<Sec>All Tasks</Sec>{D.tasks.map(function(t,i){var pct=t.pct||0;return <div key={i} style={{padding:"6px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{display:"flex",alignItems:"center",gap:6,fontSize:14}}><Dot s={t.status}/><span style={{flex:1}}>{t.title}</span><Tag color={dc(t.pri)}>{t.pri}</Tag><Tag>{t.ws}</Tag><span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:pct>=100?C.g:pct>=50?C.gold:C.tx3,minWidth:32,textAlign:"right"}}>{pct}%</span><span style={{fontSize:12,color:C.tx3}}>{t.due}</span></div><div style={{marginTop:3,height:4,background:C.bd,borderRadius:2,overflow:"hidden"}}><div style={{width:pct+"%",height:"100%",background:pct>=100?C.g:pct>=50?C.gold:C.a,borderRadius:2}}/></div></div>;})}<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
 if(nid==="roadmap"){var avgS=Math.round(D.safety.reduce(function(a,s){return a+s.cov;},0)/D.safety.length);return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Roadmap</div><Sec>Milestones</Sec>{D.milestones.map(function(m,i){return <div key={i} style={{padding:"8px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{fontSize:14}}><span style={{fontWeight:600}}>{m.title}</span> <Tag color={dc(m.risk)}>{m.risk}</Tag> <span style={{color:C.tx3}}>{m.target}</span></div><div style={{marginTop:3}}><PB val={m.pct} w={100}/> <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{m.pct}%</span></div>{m.blockers.length>0&&<div style={{fontSize:12,color:C.r,marginTop:2}}>{m.blockers.join(" | ")}</div>}</div>;})}<Sec>Safety ({avgS}%)</Sec>{D.safety.map(function(sf,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",fontSize:14}}><span style={{flex:1}}>{sf.name}</span><PB val={sf.cov} w={50} color={sf.cov>70?C.g:sf.cov>50?C.a:C.r}/><span style={{fontFamily:"'JetBrains Mono',monospace"}}>{sf.cov}%</span></div>;})}<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
 // ── Catch-all: render any NODE_TREE node via NodeBoard + seed data ──
-var nodeConfig=findNode(nid);
+var nodeConfig=findNode(nid,liveTree);
 if(nodeConfig){
   var seedRows=acts.getSeedRows(nid);
   var ce=acts.canEdit;
   return(<div>
     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
       <span style={{fontSize:22}}>{nodeConfig.icon}</span>
-      <div style={{fontSize:22,fontWeight:700,color:C.gold}}>{nodeConfig.label}</div>
-      {!ce&&<span style={{fontSize:10,color:C.tx3,padding:"2px 8px",background:C.bg3,borderRadius:3,border:"1px solid "+C.bd}}>🔒 Login to edit</span>}
+      <div style={{flex:1,fontSize:22,fontWeight:700,color:C.gold}}>{nodeConfig.label}</div>
+      {!ce&&<span style={{fontSize:10,color:C.tx3,padding:"2px 8px",background:C.bg3,borderRadius:3,border:"1px solid "+C.bd}}>🔒 Login (dogma2026) to edit</span>}
+      {ce&&<span onClick={function(){acts.deleteNodeFromTree(nid);}} style={{fontSize:10,color:C.r,padding:"3px 8px",borderRadius:3,border:"1px solid "+C.r+"30",background:C.r+"08",cursor:"pointer"}}>🗑 Delete Node</span>}
     </div>
-    <div style={{fontSize:13,color:C.tx2,marginBottom:16,lineHeight:1.6}}>{nodeConfig.description}</div>
+    <div style={{fontSize:13,color:C.tx2,marginBottom:8,lineHeight:1.6}}>{nodeConfig.description}</div>
+    <div style={{fontSize:10,color:C.tx3,marginBottom:16,fontFamily:"'JetBrains Mono',monospace"}}>ID: {nid} | Table: {nodeConfig.dbTable} | Columns: {nodeConfig.columns.map(function(c){return c.key;}).join(", ")}</div>
     {nodeConfig.children&&nodeConfig.children.length>0&&<div style={{marginBottom:16}}>
-      <Sec>Sub-nodes ({nodeConfig.children.length})</Sec>
+      <Sec>Sub-nodes ({nodeConfig.children.length}){ce&&<span onClick={function(){var name=prompt("New sub-node name:");if(!name||!name.trim())return;var id="sub-"+Date.now();acts.addNodeToTree(nid,{id:id,label:name.trim(),icon:"📎",description:name.trim(),dbTable:"subsystems",columns:[{key:"name",label:"Name",type:"text",editable:true,width:180},{key:"description",label:"Description",type:"text",editable:true,width:250},{key:"maturity_level",label:"Maturity",type:"progress",editable:true,width:120},{key:"status",label:"Status",type:"status",editable:true,width:100},{key:"criticality",label:"Criticality",type:"priority",editable:true,width:100},{key:"owner",label:"Owner",type:"person",editable:true,width:100}],children:[]});}} style={{color:C.gold,cursor:"pointer",marginLeft:8,fontSize:11,fontWeight:400}}>+ Add sub-node</span>}</Sec>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-        {nodeConfig.children.map(function(ch){return <div key={ch.id} onClick={function(){setSel({level:"sub",id:ch.id});}} style={{padding:"8px 10px",background:C.bg,borderRadius:4,border:"1px solid "+C.bd,cursor:"pointer",borderLeft:"3px solid "+C.gold+"40"}} onMouseEnter={function(e){e.currentTarget.style.borderLeftColor=C.gold;}} onMouseLeave={function(e){e.currentTarget.style.borderLeftColor=C.gold+"40";}}>
-          <div style={{display:"flex",alignItems:"center",gap:4}}><span>{ch.icon}</span><span style={{fontSize:12,fontWeight:600,color:C.tx}}>{ch.label}</span></div>
+        {nodeConfig.children.map(function(ch){var chRows=acts.getSeedRows(ch.id);return <div key={ch.id} onClick={function(){setSel({level:"sub",id:ch.id});}} style={{padding:"8px 10px",background:C.bg,borderRadius:4,border:"1px solid "+C.bd,cursor:"pointer",borderLeft:"3px solid "+C.gold+"40"}} onMouseEnter={function(e){e.currentTarget.style.borderLeftColor=C.gold;}} onMouseLeave={function(e){e.currentTarget.style.borderLeftColor=C.gold+"40";}}>
+          <div style={{display:"flex",alignItems:"center",gap:4}}>
+            <span>{ch.icon}</span>
+            <span style={{fontSize:12,fontWeight:600,color:C.tx,flex:1}}>{ch.label}</span>
+            <span style={{fontSize:9,color:C.tx3,fontFamily:"'JetBrains Mono',monospace"}}>{chRows.length} rows</span>
+            {ce&&<span onClick={function(e){e.stopPropagation();acts.deleteNodeFromTree(ch.id);}} style={{color:C.r,fontSize:9,opacity:0.5}}>x</span>}
+          </div>
           <div style={{fontSize:10,color:C.tx3,marginTop:2}}>{ch.description}</div>
         </div>;})}
       </div>
     </div>}
-    {seedRows.length>0&&<div>
-      <Sec>Data ({seedRows.length} entries)</Sec>
+    <Sec>Data ({seedRows.length} entries){ce&&<span onClick={function(){var newId="new_"+Date.now();var name=prompt("Name:");if(!name||!name.trim())return;var desc=prompt("Description:")||"";var row={id:newId,name:name.trim(),description:desc};nodeConfig.columns.forEach(function(col){if(!row[col.key]){if(col.type==="progress"||col.type==="number")row[col.key]=0;else if(col.type==="status")row[col.key]="planned";else if(col.type==="priority")row[col.key]="medium";else if(col.type==="person")row[col.key]="Jero";else if(!row[col.key])row[col.key]="";}});acts.seedAddRow(nid,row);}} style={{color:C.gold,cursor:"pointer",marginLeft:8,fontSize:11,fontWeight:400}}>+ Add row</span>}</Sec>
+    {seedRows.length>0&&<div style={{overflowX:"auto"}}>
       <NodeBoard nodeConfig={nodeConfig} rows={seedRows}
         onCellEdit={ce?function(rowId,key,val){acts.seedUpdateCell(nid,rowId,key,val);}:undefined}
-        onAddRow={ce?function(){var newId="new_"+Date.now();var name=prompt("Name:");if(!name||!name.trim())return;var desc=prompt("Description:")||"";acts.seedAddRow(nid,{id:newId,name:name.trim(),description:desc,maturity_level:0,status:"planned",criticality:"medium",owner:"Jero"});}:undefined}
+        onAddRow={ce?function(){var newId="new_"+Date.now();var name=prompt("Name:");if(!name||!name.trim())return;var row={id:newId,name:name.trim(),description:""};nodeConfig.columns.forEach(function(col){if(!row[col.key]){if(col.type==="progress"||col.type==="number")row[col.key]=0;else if(col.type==="status")row[col.key]="planned";else if(col.type==="priority")row[col.key]="medium";else if(col.type==="person")row[col.key]="Jero";else row[col.key]="";}});acts.seedAddRow(nid,row);}:undefined}
         onDeleteRow={ce?function(rowId){if(confirm("Delete this entry?"))acts.seedDeleteRow(nid,rowId);}:undefined}
       />
     </div>}
-    {seedRows.length===0&&<div style={{padding:20,textAlign:"center",color:C.tx3,fontSize:13}}>No data yet.{ce&&<span onClick={function(){var newId="new_"+Date.now();var name=prompt("Name:");if(!name||!name.trim())return;acts.seedAddRow(nid,{id:newId,name:name.trim(),description:"",maturity_level:0,status:"planned",criticality:"medium",owner:"Jero"});}} style={{color:C.gold,cursor:"pointer",marginLeft:6}}>+ Add first entry</span>}</div>}
+    {seedRows.length===0&&<div style={{padding:20,textAlign:"center",color:C.tx3,fontSize:13}}>No data yet.</div>}
     <FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/>
   </div>);
 }
@@ -932,28 +938,33 @@ if(tp==="sply")return(<div>
 {DeleteBtn}</div>);
 
 // ── Catch-all for SubPage: render NODE_TREE child via NodeBoard ──
-var subNodeConfig=findNode(sub.id);
+var subNodeConfig=findNode(sub.id,acts.liveTree);
 if(subNodeConfig){
   var subSeedRows=acts.getSeedRows(sub.id);
   return(<div>
     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
       <span style={{fontSize:20}}>{subNodeConfig.icon}</span>
-      <div style={{fontSize:20,fontWeight:700,color:C.gold}}>{subNodeConfig.label}</div>
-      {!ce&&<span style={{fontSize:10,color:C.tx3,padding:"2px 8px",background:C.bg3,borderRadius:3,border:"1px solid "+C.bd}}>🔒 Login to edit</span>}
+      <div style={{flex:1,fontSize:20,fontWeight:700,color:C.gold}}>{subNodeConfig.label}</div>
+      {ce&&<span onClick={function(){acts.deleteNodeFromTree(sub.id);}} style={{fontSize:10,color:C.r,padding:"3px 8px",borderRadius:3,border:"1px solid "+C.r+"30",background:C.r+"08",cursor:"pointer"}}>🗑 Delete</span>}
     </div>
-    <div style={{fontSize:13,color:C.tx2,marginBottom:12}}>{subNodeConfig.description}</div>
+    <div style={{fontSize:13,color:C.tx2,marginBottom:8}}>{subNodeConfig.description}</div>
+    <div style={{fontSize:10,color:C.tx3,marginBottom:12,fontFamily:"'JetBrains Mono',monospace"}}>ID: {sub.id} | Table: {subNodeConfig.dbTable}</div>
     {subNodeConfig.children&&subNodeConfig.children.length>0&&<div style={{marginBottom:12}}>
-      <Sec>Children ({subNodeConfig.children.length})</Sec>
+      <Sec>Children ({subNodeConfig.children.length}){ce&&<span onClick={function(){var name=prompt("New child name:");if(!name||!name.trim())return;var id="ssub-"+Date.now();acts.addNodeToTree(sub.id,{id:id,label:name.trim(),icon:"•",description:name.trim(),dbTable:"subsystems",columns:[{key:"name",label:"Name",type:"text",editable:true,width:180},{key:"description",label:"Description",type:"text",editable:true,width:250},{key:"status",label:"Status",type:"status",editable:true,width:100},{key:"criticality",label:"Criticality",type:"priority",editable:true,width:100}],children:[]});}} style={{color:C.gold,cursor:"pointer",marginLeft:8,fontSize:11,fontWeight:400}}>+ Add child</span>}</Sec>
       <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-        {subNodeConfig.children.map(function(ch){return <span key={ch.id} style={{padding:"4px 8px",fontSize:11,borderRadius:3,background:C.bg,border:"1px solid "+C.bd,color:C.tx,cursor:"pointer"}} onClick={function(){}}>{ch.icon} {ch.label}</span>;})}
+        {subNodeConfig.children.map(function(ch){return <span key={ch.id} style={{padding:"4px 8px",fontSize:11,borderRadius:3,background:C.bg,border:"1px solid "+C.bd,color:C.tx,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}}>
+          {ch.icon} {ch.label}
+          {ce&&<span onClick={function(e){e.stopPropagation();acts.deleteNodeFromTree(ch.id);}} style={{color:C.r,fontSize:9,opacity:0.5,marginLeft:2}}>x</span>}
+        </span>;})}
       </div>
     </div>}
-    {subSeedRows.length>0&&<NodeBoard nodeConfig={subNodeConfig} rows={subSeedRows}
+    <Sec>Data ({subSeedRows.length} entries){ce&&<span onClick={function(){var newId="new_"+Date.now();var name=prompt("Name:");if(!name||!name.trim())return;var row={id:newId,name:name.trim(),description:""};subNodeConfig.columns.forEach(function(col){if(!row[col.key]){if(col.type==="progress"||col.type==="number")row[col.key]=0;else if(col.type==="status")row[col.key]="planned";else if(col.type==="priority")row[col.key]="medium";else if(col.type==="person")row[col.key]="Jero";else row[col.key]="";}});acts.seedAddRow(sub.id,row);}} style={{color:C.gold,cursor:"pointer",marginLeft:8,fontSize:11,fontWeight:400}}>+ Add row</span>}</Sec>
+    {subSeedRows.length>0&&<div style={{overflowX:"auto"}}><NodeBoard nodeConfig={subNodeConfig} rows={subSeedRows}
       onCellEdit={ce?function(rowId,key,val){acts.seedUpdateCell(sub.id,rowId,key,val);}:undefined}
-      onAddRow={ce?function(){var newId="new_"+Date.now();var name=prompt("Name:");if(!name||!name.trim())return;acts.seedAddRow(sub.id,{id:newId,name:name.trim(),description:"",maturity_level:0,status:"planned",criticality:"medium",owner:"Jero"});}:undefined}
+      onAddRow={ce?function(){var newId="new_"+Date.now();var name=prompt("Name:");if(!name||!name.trim())return;var row={id:newId,name:name.trim(),description:""};subNodeConfig.columns.forEach(function(col){if(!row[col.key]){if(col.type==="progress"||col.type==="number")row[col.key]=0;else if(col.type==="status")row[col.key]="planned";else if(col.type==="priority")row[col.key]="medium";else if(col.type==="person")row[col.key]="Jero";else row[col.key]="";}});acts.seedAddRow(sub.id,row);}:undefined}
       onDeleteRow={ce?function(rowId){if(confirm("Delete this entry?"))acts.seedDeleteRow(sub.id,rowId);}:undefined}
-    />}
-    {subSeedRows.length===0&&<div style={{padding:16,textAlign:"center",color:C.tx3,fontSize:12}}>No data.{ce&&<span onClick={function(){var newId="new_"+Date.now();var name=prompt("Name:");if(!name||!name.trim())return;acts.seedAddRow(sub.id,{id:newId,name:name.trim(),description:"",maturity_level:0,status:"planned",criticality:"medium",owner:"Jero"});}} style={{color:C.gold,cursor:"pointer",marginLeft:6}}>+ Add first entry</span>}</div>}
+    /></div>}
+    {subSeedRows.length===0&&<div style={{padding:16,textAlign:"center",color:C.tx3,fontSize:12}}>No data yet.</div>}
   </div>);
 }
 return null;}
@@ -1014,6 +1025,27 @@ var AGENT_CATEGORIES=[
 export default function Dashboard(){
 var _showSettings=useState(false),showSettings=_showSettings[0],setShowSettings=_showSettings[1];
 var _agentEditPolicy=useState('approval'),agentEditPolicy=_agentEditPolicy[0],setAgentEditPolicy=_agentEditPolicy[1];
+// Dynamic node tree (add/delete nodes at any level)
+var _dynTree=useState(null),dynTree=_dynTree[0],setDynTree=_dynTree[1];
+var liveTree=dynTree||NODE_TREE;
+// Persist dynamic tree
+useEffect(function(){try{var saved=localStorage.getItem("dogma_dyn_tree");if(saved){var parsed=JSON.parse(saved);if(parsed&&parsed.length>0)setDynTree(parsed);}}catch(e){}},[]);
+useEffect(function(){if(dynTree)try{localStorage.setItem("dogma_dyn_tree",JSON.stringify(dynTree));}catch(e){}},[dynTree]);
+// Node CRUD
+var addNodeToTree=function(parentId,newNode){
+  if(!canEdit)return;
+  function insertChild(nodes){return nodes.map(function(n){if(n.id===parentId)return Object.assign({},n,{children:(n.children||[]).concat([newNode])});return Object.assign({},n,{children:insertChild(n.children||[])});});}
+  setDynTree(insertChild(liveTree));
+};
+var deleteNodeFromTree=function(nodeId){
+  if(!canEdit||!confirm("Delete node '"+nodeId+"' and all its children?"))return;
+  function removeNode(nodes){return nodes.filter(function(n){return n.id!==nodeId;}).map(function(n){return Object.assign({},n,{children:removeNode(n.children||[])});});}
+  setDynTree(removeNode(liveTree));
+  if(sel&&sel.id===nodeId)setSel(null);
+};
+// Rebuild 3D when tree changes
+var NODES=useMemo(function(){return buildNodes3D(liveTree);},[liveTree]);
+var LINKS=useMemo(function(){return buildLinks3D(NODES);},[NODES]);
 // Seed data local edits (add/delete/update rows per node)
 var _seedEdits=useState({}),seedEdits=_seedEdits[0],setSeedEdits=_seedEdits[1];
 var getSeedRows=function(nodeId){
@@ -1335,7 +1367,7 @@ var removeSubItem=function(col,eid,field,idx){
   });
   addLog("Removed item from "+col+"/"+eid+"."+field);
 };
-var acts={addNote:addNote,advP:advP,advI:advI,resInc:resInc,togTask:togTask,updateField:updateField,updateArrayField:updateArrayField,updateFin:updateFin,canEdit:canEdit,canGen:canGen,persistField:persistField,apiCreate:apiCreate,apiDelete:apiDelete,apiSave:apiSave,addSubItem:addSubItem,editSubItem:editSubItem,removeSubItem:removeSubItem,showCreateForm:function(type){setShowCreate({type:type});},getSeedRows:getSeedRows,seedAddRow:seedAddRow,seedDeleteRow:seedDeleteRow,seedUpdateCell:seedUpdateCell};
+var acts={addNote:addNote,advP:advP,advI:advI,resInc:resInc,togTask:togTask,updateField:updateField,updateArrayField:updateArrayField,updateFin:updateFin,canEdit:canEdit,canGen:canGen,persistField:persistField,apiCreate:apiCreate,apiDelete:apiDelete,apiSave:apiSave,addSubItem:addSubItem,editSubItem:editSubItem,removeSubItem:removeSubItem,showCreateForm:function(type){setShowCreate({type:type});},getSeedRows:getSeedRows,seedAddRow:seedAddRow,seedDeleteRow:seedDeleteRow,seedUpdateCell:seedUpdateCell,addNodeToTree:addNodeToTree,deleteNodeFromTree:deleteNodeFromTree,liveTree:liveTree};
 
 var allSubs=useMemo(function(){var r=[];Object.keys(xp).forEach(function(k){if(xp[k])r=r.concat(getSubs(k,D));});return r;},[xp,D]);
 var allSSubs=useMemo(function(){var r=[];Object.keys(xp2).forEach(function(k){if(xp2[k]){var s=allSubs.find(function(x){return x.id===k;});if(s)r=r.concat(getSSubs(s));}});return r;},[xp2,allSubs]);
@@ -1803,12 +1835,13 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
         <span style={{fontWeight:700,color:C.gold,fontSize:13}}>DOGMA COMMAND</span>
       </div>
       {/* NODE_TREE groups */}
-      {NODE_TREE.map(function(group){
+      {liveTree.map(function(group){
         var isGrpExp=!!xp[group.id];
         return <div key={group.id}>
           <div onClick={function(){setXp(function(p){var n=Object.assign({},p);n[group.id]=!p[group.id];return n;});}} style={{padding:"6px 10px",fontSize:9,color:C.tx3,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,background:C.bg+"80",borderBottom:"1px solid "+C.bd+"30",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
             <span style={{fontSize:8}}>{isGrpExp?"▼":"▶"}</span>
-            <span>{group.icon} {group.label}</span>
+            <span style={{flex:1}}>{group.icon} {group.label}</span>
+            {canEdit&&<span onClick={function(e){e.stopPropagation();var name=prompt("New node name:");if(!name||!name.trim())return;var id="node-"+Date.now();addNodeToTree(group.id,{id:id,label:name.trim(),icon:"📄",description:name.trim(),dbTable:"subsystems",columns:[{key:"name",label:"Name",type:"text",editable:true,width:180},{key:"description",label:"Description",type:"text",editable:true,width:250},{key:"maturity_level",label:"Maturity",type:"progress",editable:true,width:120},{key:"status",label:"Status",type:"status",editable:true,width:100},{key:"criticality",label:"Criticality",type:"priority",editable:true,width:100},{key:"owner",label:"Owner",type:"person",editable:true,width:100}],children:[]});}} style={{color:C.gold,fontSize:10,opacity:0.5,padding:"0 2px"}} title="Add node">+</span>}
           </div>
           {isGrpExp&&group.children.map(function(node){
             var isSel=sel&&sel.id===node.id;
@@ -1821,6 +1854,8 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
                 {node.children&&node.children.length>0?<span style={{fontSize:8,color:C.tx3}}>{isNodeExp?"▼":"▶"}</span>:<span style={{width:8}}/>}
                 <span style={{fontSize:11}}>{node.icon}</span>
                 <span style={{flex:1,color:isSel?C.gold:C.tx,fontWeight:isSel?600:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontSize:11}}>{node.label}</span>
+                {canEdit&&<span onClick={function(e){e.stopPropagation();var name=prompt("New sub-node name:");if(!name||!name.trim())return;var id="sub-"+Date.now();addNodeToTree(node.id,{id:id,label:name.trim(),icon:"📎",description:name.trim(),dbTable:"subsystems",columns:[{key:"name",label:"Name",type:"text",editable:true,width:180},{key:"description",label:"Description",type:"text",editable:true,width:250},{key:"maturity_level",label:"Maturity",type:"progress",editable:true,width:120},{key:"status",label:"Status",type:"status",editable:true,width:100},{key:"criticality",label:"Criticality",type:"priority",editable:true,width:100},{key:"owner",label:"Owner",type:"person",editable:true,width:100}],children:[]});}} style={{color:C.gold,fontSize:9,opacity:0.4,padding:"0 2px"}} title="Add sub-node">+</span>}
+                {canEdit&&<span onClick={function(e){e.stopPropagation();deleteNodeFromTree(node.id);}} style={{color:C.r,fontSize:9,opacity:0.4,padding:"0 2px"}} title="Delete node">x</span>}
               </div>
               {/* L2 children */}
               {isNodeExp&&node.children&&node.children.map(function(child){
@@ -1834,13 +1869,16 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
                     {child.children&&child.children.length>0?<span style={{fontSize:7,color:C.tx3}}>{isChildExp?"▼":"▶"}</span>:<span style={{width:7}}/>}
                     <span style={{fontSize:10}}>{child.icon}</span>
                     <span style={{flex:1,color:isChildSel?C.gold:C.tx2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{child.label}</span>
+                    {canEdit&&<span onClick={function(e){e.stopPropagation();var name=prompt("New sub-sub-node name:");if(!name||!name.trim())return;var id="ssub-"+Date.now();addNodeToTree(child.id,{id:id,label:name.trim(),icon:"•",description:name.trim(),dbTable:"subsystems",columns:[{key:"name",label:"Name",type:"text",editable:true,width:180},{key:"description",label:"Description",type:"text",editable:true,width:250},{key:"status",label:"Status",type:"status",editable:true,width:100},{key:"criticality",label:"Criticality",type:"priority",editable:true,width:100}],children:[]});}} style={{color:C.gold,fontSize:8,opacity:0.4,padding:"0 1px"}} title="Add child">+</span>}
+                    {canEdit&&<span onClick={function(e){e.stopPropagation();deleteNodeFromTree(child.id);}} style={{color:C.r,fontSize:8,opacity:0.4,padding:"0 1px"}} title="Delete">x</span>}
                   </div>
                   {/* L3 grandchildren */}
                   {isChildExp&&child.children&&child.children.map(function(gc){
                     var isGcSel=sel&&sel.id===gc.id;
                     return <div key={gc.id} onClick={function(){setSel({level:"ssub",id:gc.id});}} style={{display:"flex",alignItems:"center",gap:4,padding:"2px 10px 2px 46px",cursor:"pointer",fontSize:9,color:isGcSel?C.gold:C.tx3}} onMouseEnter={function(e){e.currentTarget.style.background=C.bg3;e.currentTarget.style.color=C.tx;}} onMouseLeave={function(e){e.currentTarget.style.background="transparent";e.currentTarget.style.color=isGcSel?C.gold:C.tx3;}}>
                       <div style={{width:3,height:3,borderRadius:"50%",background:isGcSel?C.gold:C.tx3,flexShrink:0}}/>
-                      <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{gc.label}</span>
+                      <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{gc.label}</span>
+                      {canEdit&&<span onClick={function(e){e.stopPropagation();deleteNodeFromTree(gc.id);}} style={{color:C.r,fontSize:8,opacity:0.4,padding:"0 1px"}} title="Delete">x</span>}
                     </div>;
                   })}
                 </div>;
