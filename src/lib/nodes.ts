@@ -238,3 +238,60 @@ export function findNode(id: string, nodes: NodeConfig[] = NODE_TREE): NodeConfi
   }
   return null
 }
+
+// 3D layout: convert NODE_TREE into positioned nodes for Three.js visualization
+export interface Node3D {
+  id: string; label: string; pos: [number, number, number]; r: number; color: number; level: 'center'|'group'|'node'|'child'|'grandchild'; parentId?: string
+}
+
+export function buildNodes3D(tree: NodeConfig[] = NODE_TREE): Node3D[] {
+  const nodes: Node3D[] = []
+  // Center node
+  nodes.push({id:'command', label:'DOGMA', pos:[0,0,0], r:1.6, color:0xC8A74B, level:'center'})
+
+  // Group colors
+  const GC = [0xC8A74B, 0x2D7A5D, 0x3A5A7A, 0xA78530, 0x8A3333, 0x3A7A7A, 0x2D7A5D]
+
+  // Place groups in a ring
+  const groupR = 9
+  tree.forEach((group, gi) => {
+    const ga = Math.PI/2 + gi * 2 * Math.PI / tree.length
+    const gx = groupR * Math.cos(ga)
+    const gy = groupR * Math.sin(ga)
+    const gz = (gi % 2 === 0 ? 0.3 : -0.3)
+    const gc = GC[gi % GC.length]
+    nodes.push({id: group.id, label: group.label, pos:[gx, gy, gz], r:1.1, color: gc, level:'group'})
+
+    // Place L1 children around their group
+    const childR = 3.8
+    const children = group.children || []
+    children.forEach((child, ci) => {
+      const ca = ci * 2 * Math.PI / children.length
+      const cx = gx + childR * Math.cos(ca)
+      const cy = gy + childR * Math.sin(ca) * 0.6
+      const cz = gz + Math.sin(ca + 1) * 0.5
+      nodes.push({id: child.id, label: child.label, pos:[cx, cy, cz], r:0.5, color: gc, level:'node', parentId: group.id})
+
+      // Place L2 grandchildren around their parent
+      const gcR = 1.8
+      const grandchildren = child.children || []
+      grandchildren.forEach((gc2, gci) => {
+        const gca = gci * 2 * Math.PI / grandchildren.length
+        const gcx = cx + gcR * Math.cos(gca)
+        const gcy = cy + gcR * Math.sin(gca) * 0.6
+        const gcz = cz + Math.cos(gca + 2) * 0.3
+        nodes.push({id: gc2.id, label: gc2.label, pos:[gcx, gcy, gcz], r:0.25, color: gc, level:'child', parentId: child.id})
+      })
+    })
+  })
+  return nodes
+}
+
+export function buildLinks3D(nodes3d: Node3D[]): [string, string][] {
+  const links: [string, string][] = []
+  // Link center to all groups
+  nodes3d.filter(n => n.level === 'group').forEach(g => links.push(['command', g.id]))
+  // Link parents to children
+  nodes3d.filter(n => n.parentId).forEach(n => links.push([n.parentId!, n.id]))
+  return links
+}

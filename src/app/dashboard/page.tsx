@@ -14,7 +14,8 @@ import { TopBar } from '@/components/dashboard/TopBar';
 import { ChatPanel } from '@/components/dashboard/ChatPanel';
 import { SettingsPanel } from '@/components/dashboard/SettingsPanel';
 import { NodeBoard } from '@/components/dashboard/NodeBoard';
-import { NODE_TREE, findNode } from '@/lib/nodes';
+import { NODE_TREE, findNode, buildNodes3D, buildLinks3D } from '@/lib/nodes';
+import { SEED_DATA } from '@/lib/seed-data';
 var THREE = typeof window !== "undefined" ? require("three") : null;
 var nw=function(){return new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});};
 var dy=function(){return new Date().toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});};
@@ -189,12 +190,8 @@ function getBlockedBy(entityId,deps){
 function getBlocks(entityId,deps){
   return(deps||[]).filter(function(d){return d.from===entityId;});
 }
-var ENR=8;var NODES=[{id:"command",label:"COMMAND",pos:[0,0,0],r:1.4,center:true,color:0xC8A74B}];
-var NI=["rd","experiments","incidents","fleet","pilots","fundraising","finance","team","roadmap"];
-var NM=["R & D","EXPERIMENTS","INCIDENTS","FLEET","PILOTS","FUNDRAISING","FINANCE","TASKS","ROADMAP"];
-var NC=[0x2D7A5D,0x3A7A7A,0x8A3333,0x3A5A7A,0xA78530,0x2D7A5D,0xA78530,0x3A5A7A,0x8A3333];
-for(var _i=0;_i<9;_i++){var _a=Math.PI/2+_i*2*Math.PI/9;NODES.push({id:NI[_i],label:NM[_i],pos:[ENR*Math.cos(_a),ENR*Math.sin(_a),[0,0.4,-0.4,0.3,-0.3,0.4,-0.4,0.3,-0.3][_i]],r:[1.0,0.85,0.85,0.8,1.0,0.9,0.85,0.9,0.85][_i],color:NC[_i]});}
-var LINKS=[["command","rd"],["command","experiments"],["command","incidents"],["command","pilots"],["command","fundraising"],["command","finance"],["command","team"],["command","roadmap"],["command","fleet"],["rd","experiments"],["rd","incidents"],["rd","team"],["experiments","incidents"],["incidents","fleet"],["pilots","fundraising"],["pilots","rd"],["fundraising","finance"],["finance","team"],["roadmap","team"],["roadmap","rd"],["fleet","rd"]];
+var NODES=buildNodes3D(NODE_TREE);
+var LINKS=buildLinks3D(NODES);
 
 function getSubs(pid,D){var R=3.5;var items=[];
 if(pid==="rd"){items=D.ss.map(function(s){return{id:s.id,label:s.name,metric:s.mat+"%",color:dc(s.status),r:0.45,type:"ss",data:s};}).concat(D.skills.map(function(s){return{id:s.id,label:s.name,metric:s.success+"%",color:dc(s.status),r:0.45,type:"skill",data:s};}));}
@@ -648,6 +645,37 @@ return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}
 <FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
 if(nid==="team"){var doneCount=D.tasks.filter(function(t){return t.status==="done";}).length;var avgPct=D.tasks.length?Math.round(D.tasks.reduce(function(a,t){return a+(t.pct||0);},0)/D.tasks.length):0;return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Task Board</div><Row label="Total" value={D.tasks.length}/><Row label="Critical" value={cr} color={cr?C.r:C.g}/><Row label="Done" value={doneCount+"/"+D.tasks.length} color={C.g}/><Row label="Avg Completion" value={avgPct+"%"} color={avgPct>60?C.g:C.a}/><div style={{marginTop:6,marginBottom:12}}><div style={{height:8,background:C.bd,borderRadius:4,overflow:"hidden"}}><div style={{width:avgPct+"%",height:"100%",background:avgPct>=80?C.g:avgPct>=40?C.gold:C.a,borderRadius:4,transition:"width 0.3s"}}/></div></div>{canEdit&&<div style={{marginBottom:10}}><Btn v="gold" onClick={function(){setShowCreate({type:"tasks"});}}>+ New Task</Btn></div>}<Sec>All Tasks</Sec>{D.tasks.map(function(t,i){var pct=t.pct||0;return <div key={i} style={{padding:"6px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{display:"flex",alignItems:"center",gap:6,fontSize:14}}><Dot s={t.status}/><span style={{flex:1}}>{t.title}</span><Tag color={dc(t.pri)}>{t.pri}</Tag><Tag>{t.ws}</Tag><span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:pct>=100?C.g:pct>=50?C.gold:C.tx3,minWidth:32,textAlign:"right"}}>{pct}%</span><span style={{fontSize:12,color:C.tx3}}>{t.due}</span></div><div style={{marginTop:3,height:4,background:C.bd,borderRadius:2,overflow:"hidden"}}><div style={{width:pct+"%",height:"100%",background:pct>=100?C.g:pct>=50?C.gold:C.a,borderRadius:2}}/></div></div>;})}<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
 if(nid==="roadmap"){var avgS=Math.round(D.safety.reduce(function(a,s){return a+s.cov;},0)/D.safety.length);return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Roadmap</div><Sec>Milestones</Sec>{D.milestones.map(function(m,i){return <div key={i} style={{padding:"8px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{fontSize:14}}><span style={{fontWeight:600}}>{m.title}</span> <Tag color={dc(m.risk)}>{m.risk}</Tag> <span style={{color:C.tx3}}>{m.target}</span></div><div style={{marginTop:3}}><PB val={m.pct} w={100}/> <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{m.pct}%</span></div>{m.blockers.length>0&&<div style={{fontSize:12,color:C.r,marginTop:2}}>{m.blockers.join(" | ")}</div>}</div>;})}<Sec>Safety ({avgS}%)</Sec>{D.safety.map(function(sf,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",fontSize:14}}><span style={{flex:1}}>{sf.name}</span><PB val={sf.cov} w={50} color={sf.cov>70?C.g:sf.cov>50?C.a:C.r}/><span style={{fontFamily:"'JetBrains Mono',monospace"}}>{sf.cov}%</span></div>;})}<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
+// ── Catch-all: render any NODE_TREE node via NodeBoard + seed data ──
+var nodeConfig=findNode(nid);
+if(nodeConfig){
+  var seedRows=(SEED_DATA[nid]||[]).slice();
+  return(<div>
+    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+      <span style={{fontSize:22}}>{nodeConfig.icon}</span>
+      <div style={{fontSize:22,fontWeight:700,color:C.gold}}>{nodeConfig.label}</div>
+    </div>
+    <div style={{fontSize:13,color:C.tx2,marginBottom:16,lineHeight:1.6}}>{nodeConfig.description}</div>
+    {nodeConfig.children&&nodeConfig.children.length>0&&<div style={{marginBottom:16}}>
+      <Sec>Sub-nodes ({nodeConfig.children.length})</Sec>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+        {nodeConfig.children.map(function(ch){return <div key={ch.id} onClick={function(){setSel({level:"sub",id:ch.id});}} style={{padding:"8px 10px",background:C.bg,borderRadius:4,border:"1px solid "+C.bd,cursor:"pointer",borderLeft:"3px solid "+C.gold+"40"}} onMouseEnter={function(e){e.currentTarget.style.borderLeftColor=C.gold;}} onMouseLeave={function(e){e.currentTarget.style.borderLeftColor=C.gold+"40";}}>
+          <div style={{display:"flex",alignItems:"center",gap:4}}><span>{ch.icon}</span><span style={{fontSize:12,fontWeight:600,color:C.tx}}>{ch.label}</span></div>
+          <div style={{fontSize:10,color:C.tx3,marginTop:2}}>{ch.description}</div>
+        </div>;})}
+      </div>
+    </div>}
+    {seedRows.length>0&&<div>
+      <Sec>Data ({seedRows.length} entries)</Sec>
+      <NodeBoard nodeConfig={nodeConfig} rows={seedRows}
+        onCellEdit={function(rowId,key,val){}}
+        onAddRow={function(){if(acts.showCreateForm)acts.showCreateForm(nodeConfig.dbTable);}}
+        onDeleteRow={function(rowId){if(confirm("Delete this entry?")&&acts.apiDelete)acts.apiDelete(nodeConfig.dbTable,rowId);}}
+      />
+    </div>}
+    {seedRows.length===0&&<div style={{padding:20,textAlign:"center",color:C.tx3,fontSize:13}}>No seed data. Supabase table: <span style={{color:C.gold,fontFamily:"'JetBrains Mono',monospace"}}>{nodeConfig.dbTable}</span></div>}
+    <FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/>
+  </div>);
+}
 return null;}
 
 
@@ -901,6 +929,26 @@ if(tp==="sply")return(<div>
 
 {DeleteBtn}</div>);
 
+// ── Catch-all for SubPage: render NODE_TREE child via NodeBoard ──
+var subNodeConfig=findNode(sub.id);
+if(subNodeConfig){
+  var subSeedRows=(SEED_DATA[sub.id]||[]).slice();
+  return(<div>
+    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+      <span style={{fontSize:20}}>{subNodeConfig.icon}</span>
+      <div style={{fontSize:20,fontWeight:700,color:C.gold}}>{subNodeConfig.label}</div>
+    </div>
+    <div style={{fontSize:13,color:C.tx2,marginBottom:12}}>{subNodeConfig.description}</div>
+    {subNodeConfig.children&&subNodeConfig.children.length>0&&<div style={{marginBottom:12}}>
+      <Sec>Children ({subNodeConfig.children.length})</Sec>
+      <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+        {subNodeConfig.children.map(function(ch){return <span key={ch.id} style={{padding:"4px 8px",fontSize:11,borderRadius:3,background:C.bg,border:"1px solid "+C.bd,color:C.tx,cursor:"pointer"}} onClick={function(){}}>{ch.icon} {ch.label}</span>;})}
+      </div>
+    </div>}
+    {subSeedRows.length>0&&<NodeBoard nodeConfig={subNodeConfig} rows={subSeedRows} onCellEdit={function(){}} onAddRow={function(){}} onDeleteRow={function(){}}/>}
+    {subSeedRows.length===0&&<div style={{padding:16,textAlign:"center",color:C.tx3,fontSize:12}}>No data — table: {subNodeConfig.dbTable}</div>}
+  </div>);
+}
 return null;}
 
 function LeafPage({leaf,acts}){if(!leaf)return null;
@@ -1304,8 +1352,8 @@ var intv=setInterval(function(){if(overlayRef.current.pos)setOverlay(overlayRef.
 var onR=function(){W=el.clientWidth;H=el.clientHeight;cam.aspect=W/H;cam.updateProjectionMatrix();rend.setSize(W,H);};window.addEventListener("resize",onR);return function(){cancelAnimationFrame(frameRef.current);clearInterval(intv);window.removeEventListener("resize",onR);rend.dispose();};},[]);
 
 useEffect(function(){var scene=sceneRef.current;if(!scene)return;var rem=[];scene.children.forEach(function(c){if(c.userData&&c.userData.dogma)rem.push(c);});rem.forEach(function(c){scene.remove(c);if(c.geometry)c.geometry.dispose();if(c.material){if(c.material.map)c.material.map.dispose();c.material.dispose();}});
-NODES.forEach(function(n){var g=new THREE.SphereGeometry(n.r,32,32);var m=new THREE.MeshPhongMaterial({color:n.color,transparent:true,opacity:0.82,shininess:50});var me=new THREE.Mesh(g,m);me.position.set(n.pos[0],n.pos[1],n.pos[2]);me.userData={dogma:true,origX:n.pos[0],origY:n.pos[1],origZ:n.pos[2]};scene.add(me);var l=makeLabel(n.label,n.center?64:48,"#C8A74B");l.position.set(n.pos[0],n.pos[1]+n.r+0.6,n.pos[2]);l.userData.origSX=n.pos[0];l.userData.origSY=n.pos[1]+n.r+0.6;scene.add(l);});
-LINKS.forEach(function(lk){var a=NODES.find(function(n){return n.id===lk[0];});var b=NODES.find(function(n){return n.id===lk[1];});if(!a||!b)return;var aExp=lk[0]==="command"||!!xp[lk[0]];var bExp=lk[1]==="command"||!!xp[lk[1]];if(!aExp&&!bExp)return;var mid=new THREE.Vector3((a.pos[0]+b.pos[0])/2,(a.pos[1]+b.pos[1])/2+0.3,(a.pos[2]+b.pos[2])/2);var crv=new THREE.QuadraticBezierCurve3(new THREE.Vector3(a.pos[0],a.pos[1],a.pos[2]),mid,new THREE.Vector3(b.pos[0],b.pos[1],b.pos[2]));var g=new THREE.BufferGeometry().setFromPoints(crv.getPoints(24));var m=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.07});var ln=new THREE.Line(g,m);ln.userData={dogma:true};scene.add(ln);});
+NODES.forEach(function(n){var g=new THREE.SphereGeometry(n.r,32,32);var m=new THREE.MeshPhongMaterial({color:n.color,transparent:true,opacity:0.82,shininess:50});var me=new THREE.Mesh(g,m);me.position.set(n.pos[0],n.pos[1],n.pos[2]);me.userData={dogma:true,origX:n.pos[0],origY:n.pos[1],origZ:n.pos[2]};scene.add(me);var fs=n.level==="center"?64:n.level==="group"?48:n.level==="node"?32:24;var l=makeLabel(n.label,fs,"#C8A74B");l.position.set(n.pos[0],n.pos[1]+n.r+0.4,n.pos[2]);l.userData.origSX=n.pos[0];l.userData.origSY=n.pos[1]+n.r+0.4;scene.add(l);});
+LINKS.forEach(function(lk){var a=NODES.find(function(n){return n.id===lk[0];});var b=NODES.find(function(n){return n.id===lk[1];});if(!a||!b)return;var mid=new THREE.Vector3((a.pos[0]+b.pos[0])/2,(a.pos[1]+b.pos[1])/2+0.3,(a.pos[2]+b.pos[2])/2);var crv=new THREE.QuadraticBezierCurve3(new THREE.Vector3(a.pos[0],a.pos[1],a.pos[2]),mid,new THREE.Vector3(b.pos[0],b.pos[1],b.pos[2]));var g=new THREE.BufferGeometry().setFromPoints(crv.getPoints(24));var m=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.06});var ln=new THREE.Line(g,m);ln.userData={dogma:true};scene.add(ln);});
 allSubs.forEach(function(sub){var cH=typeof sub.color==="string"?parseInt(sub.color.replace("#",""),16):0x6E6A84;var g=new THREE.SphereGeometry(sub.r,20,20);var m=new THREE.MeshPhongMaterial({color:cH||0x6E6A84,transparent:true,opacity:0.72});var me=new THREE.Mesh(g,m);me.position.set(sub.pos[0],sub.pos[1],sub.pos[2]);me.userData={dogma:true,origX:sub.pos[0],origY:sub.pos[1],origZ:sub.pos[2]};scene.add(me);var lt=(sub.label+(sub.metric?" "+sub.metric:"")).slice(0,22);var l=makeLabel(lt,32,"#C8C4BC");l.position.set(sub.pos[0],sub.pos[1]+sub.r+0.3,sub.pos[2]);l.userData.origSX=sub.pos[0];l.userData.origSY=sub.pos[1]+sub.r+0.3;scene.add(l);var p=NODES.find(function(n){return n.id===sub.parent;});if(p){var g2=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(p.pos[0],p.pos[1],p.pos[2]),new THREE.Vector3(sub.pos[0],sub.pos[1],sub.pos[2])]);var m2=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.05});var ln2=new THREE.Line(g2,m2);ln2.userData={dogma:true};scene.add(ln2);}});
 allSSubs.forEach(function(ssn){var g=new THREE.SphereGeometry(ssn.r,10,10);var m=new THREE.MeshPhongMaterial({color:0x444060,transparent:true,opacity:0.45});var me=new THREE.Mesh(g,m);me.position.set(ssn.pos[0],ssn.pos[1],ssn.pos[2]);me.userData={dogma:true,origX:ssn.pos[0],origY:ssn.pos[1],origZ:ssn.pos[2]};scene.add(me);var l=makeLabel(ssn.label.slice(0,18),24,"#6E6A84");l.position.set(ssn.pos[0],ssn.pos[1]+ssn.r+0.15,ssn.pos[2]);l.userData.origSX=ssn.pos[0];l.userData.origSY=ssn.pos[1]+ssn.r+0.15;scene.add(l);scene.add(l);var ps=allSubs.find(function(s){return ssn.id.startsWith(s.id+"_");});if(ps){var g2=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(ps.pos[0],ps.pos[1],ps.pos[2]),new THREE.Vector3(ssn.pos[0],ssn.pos[1],ssn.pos[2])]);var m2=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.03});var ln2=new THREE.Line(g2,m2);ln2.userData={dogma:true};scene.add(ln2);}});
 overlayRef.current.subs=allSubs.map(function(s){return{id:s.id,pos:s.pos,level:"sub",label:s.label,r:s.r};});
@@ -1346,17 +1394,17 @@ var onNodeClick=function(id,level){
   var isDbl=(last.id===id&&now2-last.time<400);
   lastClickRef.current={id:id,time:now2};
   // Find the node position
-  var nodePos=null;var zoom=null;
-  if(level==="main"){var mn=NODES.find(function(n){return n.id===id;});if(mn){nodePos=mn.pos;zoom=id==="command"?24:14;}}
-  else if(level==="sub"){var sn=allSubs.find(function(s){return s.id===id;});if(sn){nodePos=sn.pos;zoom=8;}}
-  else if(level==="ssub"){var ssn=allSSubs.find(function(s){return s.id===id;});if(ssn){nodePos=ssn.pos;zoom=5;}}
-  // Always center camera on clicked node
-  if(nodePos)focusNode(nodePos,zoom);
+  // Find any node from NODES_3D array
+  var found=NODES.find(function(n){return n.id===id;});
+  if(!found){var sn2=allSubs.find(function(s){return s.id===id;});if(sn2)found={pos:sn2.pos,level:"node"};}
+  if(!found){var ssn3=allSSubs.find(function(s){return s.id===id;});if(ssn3)found={pos:ssn3.pos,level:"child"};}
+  if(found&&found.pos){
+    var zoom2=found.level==="center"?24:found.level==="group"?16:found.level==="node"?10:found.level==="child"?6:8;
+    focusNode(found.pos,zoom2);
+  }
   if(isDbl){
-    // DOUBLE CLICK — open full page
     setSel({level:level,id:id});
   }else{
-    // SINGLE CLICK — expand/collapse children
     if(level==="main"&&id!=="command"){setXp(function(p){var n=Object.assign({},p);n[id]=!p[id];return n;});}
     else if(level==="sub"){setXp2(function(p){var n=Object.assign({},p);n[id]=!p[id];return n;});}
   }
@@ -1493,6 +1541,12 @@ var sendAgent=function(){if(!inp.trim()||ld)return;var userTxt=inp.trim();setInp
   if(agentRisks.length>0)dataSnap+="|RISKS:"+agentRisks.slice(0,5).map(function(r){return"["+r.sev+"]"+r.msg;}).join(",");
   if(D.deps&&D.deps.length>0)dataSnap+="|DEPS:"+D.deps.map(function(d){return d.from+"->"+d.blocks.join("+");}).join(",");
   if(D.pilotDeadlines)dataSnap+="|DEADLINES:"+Object.keys(D.pilotDeadlines).map(function(k){return k+":"+D.pilotDeadlines[k].needBy;}).join(",");
+
+  // DOGMA ontology context from NODE_TREE + seed data
+  var ontologySnap=NODE_TREE.map(function(g){return g.label+":"+g.children.map(function(c){return c.label+"("+c.description.slice(0,40)+")";}).join(",");}).join("|");
+  dataSnap+="|ONTOLOGY:"+ontologySnap;
+  // Include current node context if user is viewing a node
+  if(sel){var selNode=findNode(sel.id);var selSeed=SEED_DATA[sel.id]||[];if(selNode){dataSnap+="|CURRENT_NODE:"+selNode.label+":"+selNode.description;if(selSeed.length>0){dataSnap+="|NODE_DATA:"+selSeed.map(function(r){return(r.name||r.title||"")+"="+(r.description||"").slice(0,50);}).join(",");}}}
 
   // Backend handles tool_use loop + MCP connections
   fetch("/api/chat",{
