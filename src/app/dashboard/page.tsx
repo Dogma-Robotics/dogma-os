@@ -56,6 +56,43 @@ function EText({text,canEdit,onSave}){
 }
 function NoteBox({notes,onAdd}){var ref=useRef(null);var go=function(){if(ref.current&&ref.current.value.trim()){onAdd(ref.current.value.trim());ref.current.value="";}};return <div style={{marginTop:10}}><Sec>Notes ({(notes||[]).length})</Sec>{(notes||[]).map(function(n,i){return <div key={i} style={{padding:"6px 8px",background:C.bg,borderRadius:3,marginBottom:3,borderLeft:"2px solid "+C.gold+"20",fontSize:13,color:C.tx,lineHeight:1.5}}>{n.t}<div style={{fontSize:11,color:C.tx3,marginTop:2}}>{n.by} - {n.at}</div></div>;})}<div style={{display:"flex",gap:4,marginTop:4}}><input ref={ref} placeholder="Add note..." style={{flex:1,padding:"6px 10px",fontSize:13,background:C.bg,border:"1px solid "+C.bd,borderRadius:3,color:C.tx,outline:"none"}} onKeyDown={function(e){if(e.key==="Enter")go();}}/><Btn v="gold" onClick={go}>+</Btn></div></div>;}
 
+
+// Code block with copy button
+function CodeBlock({code,lang}){
+  var _copied=useState(false),copied=_copied[0],setCopied=_copied[1];
+  var copy=function(){navigator.clipboard.writeText(code).then(function(){setCopied(true);setTimeout(function(){setCopied(false);},2000);});};
+  return <div style={{position:"relative",margin:"8px 0",borderRadius:6,overflow:"hidden",border:"1px solid "+C.bd}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 12px",background:C.bg3,borderBottom:"1px solid "+C.bd}}>
+      <span style={{fontSize:11,color:C.tx3,fontFamily:"'JetBrains Mono',monospace"}}>{lang||"code"}</span>
+      <span onClick={copy} style={{fontSize:11,color:copied?C.g:C.tx3,cursor:"pointer",padding:"2px 8px",borderRadius:3,background:copied?C.g+"15":"transparent",border:"1px solid "+(copied?C.g+"30":"transparent"),transition:"all 0.2s",userSelect:"none"}}>{copied?"Copied":"Copy"}</span>
+    </div>
+    <pre style={{margin:0,padding:"12px 16px",background:C.bg,overflowX:"auto",fontSize:13,lineHeight:1.6,fontFamily:"'JetBrains Mono',monospace",color:C.tx}}>{code}</pre>
+  </div>;
+}
+
+// Render message text with code blocks
+function MsgText({text}){
+  if(!text)return null;
+  var parts=text.split(/(```[\s\S]*?```)/g);
+  return <>{parts.map(function(part,i){
+    if(part.startsWith("```")){
+      var lines=part.slice(3,-3).split("\n");
+      var lang=lines[0].trim();
+      var code=lang?lines.slice(1).join("\n"):lines.join("\n");
+      if(!lang)lang="";
+      return <CodeBlock key={i} code={code} lang={lang}/>;
+    }
+    // Also handle inline code with backticks
+    var inlineParts=part.split(/(`[^`]+`)/g);
+    return <span key={i}>{inlineParts.map(function(ip,j){
+      if(ip.startsWith("`")&&ip.endsWith("`")){
+        return <code key={j} style={{padding:"1px 6px",borderRadius:3,background:C.bg3,color:C.gold,fontSize:12,fontFamily:"'JetBrains Mono',monospace",border:"1px solid "+C.bd}}>{ip.slice(1,-1)}</code>;
+      }
+      return ip;
+    })}</span>;
+  })}</>;
+}
+
 // File upload component per node
 function FileUpload({nodeId,files,onUpload,onRemove}){
   var nodeFiles=(files[nodeId]||[]);
@@ -1869,7 +1906,7 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
       </div>
       <div style={{flex:1,overflowY:"auto",padding:10,display:"flex",flexDirection:"column",gap:4}}>
         {curMsgs.length===0&&<div style={{fontSize:13,color:C.tx3,textAlign:"center",padding:20}}>Ask {curAgent.name}<br/><span style={{fontSize:11}}>Single agent — direct conversation</span></div>}
-        {curMsgs.map(function(msg,i){return <div key={i} style={{maxWidth:"90%",alignSelf:msg.role==="user"?"flex-end":"flex-start"}}><div style={{padding:"6px 10px",borderRadius:6,background:msg.role==="user"?C.bg3:C.bg2,borderLeft:msg.role==="ai"?"2px solid "+curAgent.color:"none",fontSize:13,color:C.tx,lineHeight:1.5,whiteSpace:"pre-wrap"}}>{msg.text}</div>{msg.files&&msg.files.length>0&&msg.files.map(function(f,j){var isH=f.name&&f.name.endsWith(".html");return <div key={j} style={{marginTop:3}}>
+        {curMsgs.map(function(msg,i){return <div key={i} style={{maxWidth:"90%",alignSelf:msg.role==="user"?"flex-end":"flex-start"}}><div style={{padding:"6px 10px",borderRadius:6,background:msg.role==="user"?C.bg3:C.bg2,borderLeft:msg.role==="ai"?"2px solid "+curAgent.color:"none",fontSize:13,color:C.tx,lineHeight:1.5,whiteSpace:"pre-wrap"}}><MsgText text={msg.text}/></div>{msg.files&&msg.files.length>0&&msg.files.map(function(f,j){var isH=f.name&&f.name.endsWith(".html");return <div key={j} style={{marginTop:3}}>
 <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 8px",background:C.bg,border:"1px solid "+C.gold+"30",borderRadius:4,cursor:"pointer"}}>
 <span style={{fontSize:16}}>{f.icon||"\uD83D\uDCC1"}</span>
 <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>{f.name}</div></div>
