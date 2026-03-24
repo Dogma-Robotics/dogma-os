@@ -708,8 +708,8 @@ if(nodeConfig){
     {/* Relations */}
     <div style={{marginTop:16}}><RelationsPanel nodeId={nid} relations={nodeRels} allNodes={acts.allNodesList} canEdit={ce} onAddRelation={function(r){var nr=Object.assign({id:"rel_"+Date.now()},r);acts.setRelations(function(p){return p.concat([nr]);});acts.logActivity("create",nid,nodeConfig.label,"Added relation: "+r.type+" → "+r.targetId);}} onDeleteRelation={function(id){acts.setRelations(function(p){return p.filter(function(r){return r.id!==id;});});}}/></div>
 
-    {/* Automations */}
-    {ce&&<div style={{marginTop:16}}><Sec>Automations</Sec><AutomationsPanel rules={acts.automations.filter(function(a){return true;})} onAddRule={function(rule){acts.setAutomations(function(p){return p.concat([rule]);});acts.logActivity("automation",nid,nodeConfig.label,"Created automation: "+rule.name);}} onDeleteRule={function(id){acts.setAutomations(function(p){return p.filter(function(r){return r.id!==id;});});}} onToggleRule={function(id){acts.setAutomations(function(p){return p.map(function(r){return r.id===id?Object.assign({},r,{enabled:!r.enabled}):r;});});}} agents={AGENTS.map(function(a){return{id:a.id,name:a.name,icon:a.icon};})}/></div>}
+    {/* Automations — connected to OpenClaw agents */}
+    {ce&&<div style={{marginTop:16}}><Sec>Automations (OpenClaw)</Sec><AutomationsPanel rules={acts.automations.filter(function(a){return true;})} onAddRule={function(rule){acts.setAutomations(function(p){return p.concat([rule]);});acts.logActivity("automation",nid,nodeConfig.label,"Created automation: "+rule.name);if(rule.action.type==="run_agent"&&rule.enabled){acts.runOpenClawAgent(rule.action.agentId||"main",rule.action.message||"Run automation: "+rule.name,nid);}}} onDeleteRule={function(id){acts.setAutomations(function(p){return p.filter(function(r){return r.id!==id;});});}} onToggleRule={function(id){acts.setAutomations(function(p){return p.map(function(r){return r.id===id?Object.assign({},r,{enabled:!r.enabled}):r;});});}} agents={acts.ocAgents.length>0?acts.ocAgents:[{id:"main",name:"OpenClaw Agent",icon:"🦞"}]}/></div>}
 
     {/* Activity Feed */}
     <div style={{marginTop:16}}><Sec>Activity</Sec><ActivityFeed events={(acts.activity||[]).filter(function(e){return e.nodeId===nid;}).slice(0,20)}/></div>
@@ -1111,6 +1111,32 @@ var _nodeSearch=useState(""),nodeSearch=_nodeSearch[0],setNodeSearch=_nodeSearch
 var _automations=useState([]),automations=_automations[0],setAutomations=_automations[1];
 var _relations=useState([]),relations=_relations[0],setRelations=_relations[1];
 var _activity=useState([]),activity=_activity[0],setActivity=_activity[1];
+// OpenClaw agents list (fetched from gateway)
+var _ocAgents=useState([]),ocAgents=_ocAgents[0],setOcAgents=_ocAgents[1];
+useEffect(function(){
+  // Fetch OpenClaw agents from gateway via proxy
+  fetch("/api/openclaw/v1/agents").then(function(r){return r.json();}).then(function(data){
+    if(data&&Array.isArray(data.agents)){setOcAgents(data.agents.map(function(a){return{id:a.id||a.name,name:a.name||a.id,icon:"🦞"};}));}
+    else if(data&&data.id){setOcAgents([{id:data.id||"main",name:data.name||"OpenClaw Agent",icon:"🦞"}]);}
+  }).catch(function(){
+    // Fallback: default OpenClaw agent
+    setOcAgents([{id:"main",name:"OpenClaw Agent",icon:"🦞"}]);
+  });
+},[]);
+// Run OpenClaw agent (for automations)
+var runOpenClawAgent=function(agentIdOrName,message,nodeId){
+  var dataSnap="";
+  if(nodeId){var nr=getSeedRows(nodeId);var nc=findNode(nodeId,liveTree);if(nc)dataSnap="Node: "+nc.label+" ("+nc.description+"). Data: "+nr.map(function(r){return(r.name||r.title||"")+"="+(r.description||"").slice(0,40);}).join(", ");}
+  return fetch("/api/openclaw/v1/chat/completions",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({model:"openclaw",messages:[{role:"system",content:"You are a DOGMA Robotics agent. "+dataSnap},{role:"user",content:message}]})
+  }).then(function(r){return r.json();}).then(function(d){
+    var text=d.choices&&d.choices[0]&&d.choices[0].message?d.choices[0].message.content:"(no response)";
+    logActivity("automation",nodeId||"","","Agent ran: "+text.slice(0,60));
+    return text;
+  }).catch(function(e){return"Error: "+e.message;});
+};
 // Persist automations/relations
 useEffect(function(){try{var s=localStorage.getItem("dogma_automations");if(s)setAutomations(JSON.parse(s));}catch(e){}},[]);
 useEffect(function(){try{localStorage.setItem("dogma_automations",JSON.stringify(automations));}catch(e){}},[automations]);
@@ -1424,7 +1450,7 @@ var removeSubItem=function(col,eid,field,idx){
   });
   addLog("Removed item from "+col+"/"+eid+"."+field);
 };
-var acts={addNote:addNote,advP:advP,advI:advI,resInc:resInc,togTask:togTask,updateField:updateField,updateArrayField:updateArrayField,updateFin:updateFin,canEdit:canEdit,canGen:canGen,persistField:persistField,apiCreate:apiCreate,apiDelete:apiDelete,apiSave:apiSave,addSubItem:addSubItem,editSubItem:editSubItem,removeSubItem:removeSubItem,showCreateForm:function(type){setShowCreate({type:type});},getSeedRows:getSeedRows,seedAddRow:seedAddRow,seedDeleteRow:seedDeleteRow,seedUpdateCell:seedUpdateCell,addNodeToTree:addNodeToTree,deleteNodeFromTree:deleteNodeFromTree,liveTree:liveTree,viewMode:viewMode,setViewMode:setViewMode,filters:filters,setFilters:setFilters,sortKey:sortKey,setSortKey:setSortKey,sortDir:sortDir,setSortDir:setSortDir,groupBy:groupBy,setGroupBy:setGroupBy,nodeSearch:nodeSearch,setNodeSearch:setNodeSearch,applyFilters:applyFilters,automations:automations,setAutomations:setAutomations,relations:relations,setRelations:setRelations,activity:activity,logActivity:logActivity,allNodesList:allNodesList};
+var acts={addNote:addNote,advP:advP,advI:advI,resInc:resInc,togTask:togTask,updateField:updateField,updateArrayField:updateArrayField,updateFin:updateFin,canEdit:canEdit,canGen:canGen,persistField:persistField,apiCreate:apiCreate,apiDelete:apiDelete,apiSave:apiSave,addSubItem:addSubItem,editSubItem:editSubItem,removeSubItem:removeSubItem,showCreateForm:function(type){setShowCreate({type:type});},getSeedRows:getSeedRows,seedAddRow:seedAddRow,seedDeleteRow:seedDeleteRow,seedUpdateCell:seedUpdateCell,addNodeToTree:addNodeToTree,deleteNodeFromTree:deleteNodeFromTree,liveTree:liveTree,ocAgents:ocAgents,runOpenClawAgent:runOpenClawAgent,viewMode:viewMode,setViewMode:setViewMode,filters:filters,setFilters:setFilters,sortKey:sortKey,setSortKey:setSortKey,sortDir:sortDir,setSortDir:setSortDir,groupBy:groupBy,setGroupBy:setGroupBy,nodeSearch:nodeSearch,setNodeSearch:setNodeSearch,applyFilters:applyFilters,automations:automations,setAutomations:setAutomations,relations:relations,setRelations:setRelations,activity:activity,logActivity:logActivity,allNodesList:allNodesList};
 
 var allSubs=useMemo(function(){var r=[];Object.keys(xp).forEach(function(k){if(xp[k])r=r.concat(getSubs(k,D,NODES));});return r;},[xp,D,NODES]);
 var allSSubs=useMemo(function(){var r=[];Object.keys(xp2).forEach(function(k){if(xp2[k]){var s=allSubs.find(function(x){return x.id===k;});if(s)r=r.concat(getSSubs(s));}});return r;},[xp2,allSubs]);
