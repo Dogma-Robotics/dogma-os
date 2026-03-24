@@ -2034,19 +2034,31 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
           <span onClick={function(){window.open("http://localhost:18789","_blank");}} style={{fontSize:9,color:C.gold,cursor:"pointer",padding:"2px 6px",border:"1px solid "+C.gold+"30",borderRadius:3}}>↗ New tab</span>
           <span onClick={function(){oc.checkGateway();}} style={{fontSize:9,color:C.tx3,cursor:"pointer",padding:"2px 6px",border:"1px solid "+C.bd,borderRadius:3}}>Retry</span>
         </div>
-        {oc.gateway.connected?
+        {oc.gateway.connected?<div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
           <iframe src="/api/openclaw" style={{flex:1,border:"none",width:"100%",background:C.bg}} allow="clipboard-read; clipboard-write"/>
+          <div style={{padding:"6px 10px",borderTop:"1px solid "+C.bd+"40",display:"flex",alignItems:"center",gap:8,flexShrink:0,fontSize:10}}>
+            <span style={{color:C.tx3}}>WebSocket:</span>
+            <span style={{color:C.tx,fontFamily:"'JetBrains Mono',monospace"}}>ws://localhost:18789</span>
+            <span style={{color:C.tx3}}>Token:</span>
+            <span style={{color:C.gold,fontFamily:"'JetBrains Mono',monospace",cursor:"pointer"}} onClick={function(){navigator.clipboard.writeText("c1b587d6e4015fcba76853c05e4004d8a2c3576c4eff3d0b");}} title="Click to copy">c1b587...4d8a2c</span>
+            <span style={{color:C.tx3,fontSize:9}}>(click to copy)</span>
+          </div>
+        </div>
           :<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-            <div style={{textAlign:"center",maxWidth:300}}>
+            <div style={{textAlign:"center",maxWidth:320}}>
               <div style={{fontSize:48,marginBottom:12}}>🦞</div>
               <div style={{fontSize:18,fontWeight:700,color:C.gold,marginBottom:8}}>OpenClaw Gateway Offline</div>
-              <div style={{fontSize:12,color:C.tx2,lineHeight:1.6,marginBottom:16}}>Start the gateway to access the full OpenClaw dashboard — agents, sessions, memory, skills, browser, and tools.</div>
+              <div style={{fontSize:12,color:C.tx2,lineHeight:1.6,marginBottom:16}}>Start the gateway to access the full OpenClaw dashboard.</div>
               <div style={{padding:"12px 16px",background:C.bg,borderRadius:6,border:"1px solid "+C.bd,fontSize:12,color:C.tx,fontFamily:"'JetBrains Mono',monospace",lineHeight:2,textAlign:"left"}}>
-                <div><span style={{color:C.gold}}>1.</span> npm i -g openclaw@latest</div>
-                <div><span style={{color:C.gold}}>2.</span> openclaw setup</div>
-                <div><span style={{color:C.gold}}>3.</span> openclaw gateway run</div>
+                <div><span style={{color:C.gold}}>$</span> sudo npm i -g openclaw@latest</div>
+                <div><span style={{color:C.gold}}>$</span> openclaw setup</div>
+                <div><span style={{color:C.gold}}>$</span> openclaw gateway run</div>
               </div>
-              <div style={{fontSize:10,color:C.tx3,marginTop:12}}>Dashboard appears here automatically when connected</div>
+              <div style={{fontSize:10,color:C.tx3,marginTop:12}}>Once connected, use these credentials in the dashboard:</div>
+              <div style={{padding:"8px 12px",background:C.bg,borderRadius:4,border:"1px solid "+C.bd,marginTop:8,fontSize:11,textAlign:"left"}}>
+                <div><span style={{color:C.tx3}}>URL:</span> <span style={{color:C.tx,fontFamily:"'JetBrains Mono',monospace"}}>ws://localhost:18789</span></div>
+                <div><span style={{color:C.tx3}}>Token:</span> <span style={{color:C.gold,fontFamily:"'JetBrains Mono',monospace"}}>c1b587d6e401...8a2c</span></div>
+              </div>
               <div onClick={function(){oc.checkGateway();}} style={{marginTop:16,fontSize:12,color:C.gold,cursor:"pointer",padding:"8px 20px",border:"1px solid "+C.gold+"40",borderRadius:6,display:"inline-block",fontWeight:600}}>🔄 Retry Connection</div>
             </div>
           </div>
