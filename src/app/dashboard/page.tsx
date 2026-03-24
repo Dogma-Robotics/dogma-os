@@ -16,6 +16,13 @@ import { SettingsPanel } from '@/components/dashboard/SettingsPanel';
 import { NodeBoard } from '@/components/dashboard/NodeBoard';
 import { NODE_TREE, findNode, buildNodes3D, buildLinks3D } from '@/lib/nodes';
 import { SEED_DATA } from '@/lib/seed-data';
+import KanbanView from '@/components/dashboard/KanbanView';
+import FiltersBar from '@/components/dashboard/FiltersBar';
+import AutomationsPanel from '@/components/dashboard/AutomationsPanel';
+import RelationsPanel from '@/components/dashboard/RelationsPanel';
+import ActivityFeed from '@/components/dashboard/ActivityFeed';
+import NodeTemplates from '@/components/dashboard/NodeTemplates';
+import { useNodeData } from '@/hooks/useNodeData';
 var THREE = typeof window !== "undefined" ? require("three") : null;
 var nw=function(){return new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});};
 var dy=function(){return new Date().toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});};
@@ -644,43 +651,69 @@ return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}
 <FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
 if(nid==="team"){var doneCount=D.tasks.filter(function(t){return t.status==="done";}).length;var avgPct=D.tasks.length?Math.round(D.tasks.reduce(function(a,t){return a+(t.pct||0);},0)/D.tasks.length):0;return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Task Board</div><Row label="Total" value={D.tasks.length}/><Row label="Critical" value={cr} color={cr?C.r:C.g}/><Row label="Done" value={doneCount+"/"+D.tasks.length} color={C.g}/><Row label="Avg Completion" value={avgPct+"%"} color={avgPct>60?C.g:C.a}/><div style={{marginTop:6,marginBottom:12}}><div style={{height:8,background:C.bd,borderRadius:4,overflow:"hidden"}}><div style={{width:avgPct+"%",height:"100%",background:avgPct>=80?C.g:avgPct>=40?C.gold:C.a,borderRadius:4,transition:"width 0.3s"}}/></div></div>{canEdit&&<div style={{marginBottom:10}}><Btn v="gold" onClick={function(){setShowCreate({type:"tasks"});}}>+ New Task</Btn></div>}<Sec>All Tasks</Sec>{D.tasks.map(function(t,i){var pct=t.pct||0;return <div key={i} style={{padding:"6px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{display:"flex",alignItems:"center",gap:6,fontSize:14}}><Dot s={t.status}/><span style={{flex:1}}>{t.title}</span><Tag color={dc(t.pri)}>{t.pri}</Tag><Tag>{t.ws}</Tag><span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:pct>=100?C.g:pct>=50?C.gold:C.tx3,minWidth:32,textAlign:"right"}}>{pct}%</span><span style={{fontSize:12,color:C.tx3}}>{t.due}</span></div><div style={{marginTop:3,height:4,background:C.bd,borderRadius:2,overflow:"hidden"}}><div style={{width:pct+"%",height:"100%",background:pct>=100?C.g:pct>=50?C.gold:C.a,borderRadius:2}}/></div></div>;})}<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
 if(nid==="roadmap"){var avgS=Math.round(D.safety.reduce(function(a,s){return a+s.cov;},0)/D.safety.length);return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Roadmap</div><Sec>Milestones</Sec>{D.milestones.map(function(m,i){return <div key={i} style={{padding:"8px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{fontSize:14}}><span style={{fontWeight:600}}>{m.title}</span> <Tag color={dc(m.risk)}>{m.risk}</Tag> <span style={{color:C.tx3}}>{m.target}</span></div><div style={{marginTop:3}}><PB val={m.pct} w={100}/> <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{m.pct}%</span></div>{m.blockers.length>0&&<div style={{fontSize:12,color:C.r,marginTop:2}}>{m.blockers.join(" | ")}</div>}</div>;})}<Sec>Safety ({avgS}%)</Sec>{D.safety.map(function(sf,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",fontSize:14}}><span style={{flex:1}}>{sf.name}</span><PB val={sf.cov} w={50} color={sf.cov>70?C.g:sf.cov>50?C.a:C.r}/><span style={{fontFamily:"'JetBrains Mono',monospace"}}>{sf.cov}%</span></div>;})}<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
-// ── Catch-all: render any NODE_TREE node via NodeBoard + seed data ──
+// ── Catch-all: render any NODE_TREE node with full features ──
 var nodeConfig=findNode(nid,acts.liveTree);
 if(nodeConfig){
-  var seedRows=acts.getSeedRows(nid);
+  var seedRows=acts.applyFilters(acts.getSeedRows(nid),nodeConfig.columns);
   var ce=acts.canEdit;
+  var vm=acts.viewMode;
+  var nodeRels=(acts.relations||[]).filter(function(r){return r.sourceId===nid||r.targetId===nid;});
+  var addNewRow=function(){var newId="new_"+Date.now();var name=prompt("Name:");if(!name||!name.trim())return;var row={id:newId,name:name.trim(),description:""};nodeConfig.columns.forEach(function(col){if(!row[col.key]){if(col.type==="progress"||col.type==="number")row[col.key]=0;else if(col.type==="status")row[col.key]="planned";else if(col.type==="priority")row[col.key]="medium";else if(col.type==="person")row[col.key]="Jero";else row[col.key]="";}});acts.seedAddRow(nid,row);acts.logActivity("create",nid,nodeConfig.label,"Added row: "+name.trim());};
   return(<div>
+    {/* Header */}
     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
       <span style={{fontSize:22}}>{nodeConfig.icon}</span>
       <div style={{flex:1,fontSize:22,fontWeight:700,color:C.gold}}>{nodeConfig.label}</div>
-      {!ce&&<span style={{fontSize:10,color:C.tx3,padding:"2px 8px",background:C.bg3,borderRadius:3,border:"1px solid "+C.bd}}>🔒 Login (dogma2026) to edit</span>}
-      {ce&&<span onClick={function(){acts.deleteNodeFromTree(nid);}} style={{fontSize:10,color:C.r,padding:"3px 8px",borderRadius:3,border:"1px solid "+C.r+"30",background:C.r+"08",cursor:"pointer"}}>🗑 Delete Node</span>}
+      {!ce&&<span style={{fontSize:10,color:C.tx3,padding:"2px 8px",background:C.bg3,borderRadius:3,border:"1px solid "+C.bd}}>🔒 Login to edit</span>}
+      {ce&&<span onClick={function(){acts.deleteNodeFromTree(nid);acts.logActivity("delete",nid,nodeConfig.label,"Deleted node");}} style={{fontSize:10,color:C.r,padding:"3px 8px",borderRadius:3,border:"1px solid "+C.r+"30",background:C.r+"08",cursor:"pointer"}}>🗑 Delete</span>}
     </div>
     <div style={{fontSize:13,color:C.tx2,marginBottom:8,lineHeight:1.6}}>{nodeConfig.description}</div>
-    <div style={{fontSize:10,color:C.tx3,marginBottom:16,fontFamily:"'JetBrains Mono',monospace"}}>ID: {nid} | Table: {nodeConfig.dbTable} | Columns: {nodeConfig.columns.map(function(c){return c.key;}).join(", ")}</div>
-    {nodeConfig.children&&nodeConfig.children.length>0&&<div style={{marginBottom:16}}>
-      <Sec>Sub-nodes ({nodeConfig.children.length}){ce&&<span onClick={function(){var name=prompt("New sub-node name:");if(!name||!name.trim())return;var id="sub-"+Date.now();acts.addNodeToTree(nid,{id:id,label:name.trim(),icon:"📎",description:name.trim(),dbTable:"subsystems",columns:[{key:"name",label:"Name",type:"text",editable:true,width:180},{key:"description",label:"Description",type:"text",editable:true,width:250},{key:"maturity_level",label:"Maturity",type:"progress",editable:true,width:120},{key:"status",label:"Status",type:"status",editable:true,width:100},{key:"criticality",label:"Criticality",type:"priority",editable:true,width:100},{key:"owner",label:"Owner",type:"person",editable:true,width:100}],children:[]});}} style={{color:C.gold,cursor:"pointer",marginLeft:8,fontSize:11,fontWeight:400}}>+ Add sub-node</span>}</Sec>
+    <div style={{fontSize:10,color:C.tx3,marginBottom:12,fontFamily:"'JetBrains Mono',monospace"}}>ID: {nid} | Table: {nodeConfig.dbTable}</div>
+
+    {/* Sub-nodes */}
+    {nodeConfig.children&&nodeConfig.children.length>0&&<div style={{marginBottom:14}}>
+      <Sec>Sub-nodes ({nodeConfig.children.length}){ce&&<span onClick={function(){var name=prompt("New sub-node name:");if(!name||!name.trim())return;var id="sub-"+Date.now();acts.addNodeToTree(nid,{id:id,label:name.trim(),icon:"📎",description:name.trim(),dbTable:"subsystems",columns:[{key:"name",label:"Name",type:"text",editable:true,width:180},{key:"description",label:"Description",type:"text",editable:true,width:250},{key:"maturity_level",label:"Maturity",type:"progress",editable:true,width:120},{key:"status",label:"Status",type:"status",editable:true,width:100},{key:"criticality",label:"Criticality",type:"priority",editable:true,width:100},{key:"owner",label:"Owner",type:"person",editable:true,width:100}],children:[]});acts.logActivity("create",nid,nodeConfig.label,"Added sub-node: "+name.trim());}} style={{color:C.gold,cursor:"pointer",marginLeft:8,fontSize:11,fontWeight:400}}>+ Add</span>}</Sec>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
         {nodeConfig.children.map(function(ch){var chRows=acts.getSeedRows(ch.id);return <div key={ch.id} onClick={function(){setSel({level:"sub",id:ch.id});}} style={{padding:"8px 10px",background:C.bg,borderRadius:4,border:"1px solid "+C.bd,cursor:"pointer",borderLeft:"3px solid "+C.gold+"40"}} onMouseEnter={function(e){e.currentTarget.style.borderLeftColor=C.gold;}} onMouseLeave={function(e){e.currentTarget.style.borderLeftColor=C.gold+"40";}}>
-          <div style={{display:"flex",alignItems:"center",gap:4}}>
-            <span>{ch.icon}</span>
-            <span style={{fontSize:12,fontWeight:600,color:C.tx,flex:1}}>{ch.label}</span>
-            <span style={{fontSize:9,color:C.tx3,fontFamily:"'JetBrains Mono',monospace"}}>{chRows.length} rows</span>
-            {ce&&<span onClick={function(e){e.stopPropagation();acts.deleteNodeFromTree(ch.id);}} style={{color:C.r,fontSize:9,opacity:0.5}}>x</span>}
-          </div>
+          <div style={{display:"flex",alignItems:"center",gap:4}}><span>{ch.icon}</span><span style={{fontSize:12,fontWeight:600,color:C.tx,flex:1}}>{ch.label}</span><span style={{fontSize:9,color:C.tx3,fontFamily:"'JetBrains Mono',monospace"}}>{chRows.length}</span>{ce&&<span onClick={function(e){e.stopPropagation();acts.deleteNodeFromTree(ch.id);}} style={{color:C.r,fontSize:9,opacity:0.5}}>x</span>}</div>
           <div style={{fontSize:10,color:C.tx3,marginTop:2}}>{ch.description}</div>
         </div>;})}
       </div>
     </div>}
-    <Sec>Data ({seedRows.length} entries){ce&&<span onClick={function(){var newId="new_"+Date.now();var name=prompt("Name:");if(!name||!name.trim())return;var desc=prompt("Description:")||"";var row={id:newId,name:name.trim(),description:desc};nodeConfig.columns.forEach(function(col){if(!row[col.key]){if(col.type==="progress"||col.type==="number")row[col.key]=0;else if(col.type==="status")row[col.key]="planned";else if(col.type==="priority")row[col.key]="medium";else if(col.type==="person")row[col.key]="Jero";else if(!row[col.key])row[col.key]="";}});acts.seedAddRow(nid,row);}} style={{color:C.gold,cursor:"pointer",marginLeft:8,fontSize:11,fontWeight:400}}>+ Add row</span>}</Sec>
-    {seedRows.length>0&&<div style={{overflowX:"auto"}}>
+
+    {/* View toggle + Filters */}
+    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+      <div style={{display:"flex",gap:2}}>
+        {[["table","Table"],["kanban","Kanban"]].map(function(v){return <span key={v[0]} onClick={function(){acts.setViewMode(v[0]);}} style={{padding:"3px 10px",fontSize:10,fontWeight:600,borderRadius:3,cursor:"pointer",background:vm===v[0]?C.gold+"15":"transparent",color:vm===v[0]?C.gold:C.tx3,border:"1px solid "+(vm===v[0]?C.gold+"30":C.bd)}}>{v[1]}</span>;})}
+      </div>
+      <div style={{flex:1}}/>
+      <span style={{fontSize:11,color:C.tx3}}>{seedRows.length} entries</span>
+      {ce&&<span onClick={addNewRow} style={{fontSize:10,color:C.gold,cursor:"pointer",padding:"3px 8px",borderRadius:3,border:"1px solid "+C.gold+"30"}}>+ Add row</span>}
+    </div>
+
+    {/* Filters bar */}
+    <FiltersBar columns={nodeConfig.columns} rows={acts.getSeedRows(nid)} filters={acts.filters} onFilterChange={function(k,v){acts.setFilters(function(p){var n=Object.assign({},p);if(v)n[k]=v;else delete n[k];return n;});}} onClearFilters={function(){acts.setFilters({});acts.setNodeSearch("");acts.setSortKey("");acts.setGroupBy("");}} sortKey={acts.sortKey} sortDir={acts.sortDir} onSortChange={function(k){if(acts.sortKey===k)acts.setSortDir(acts.sortDir==="asc"?"desc":"asc");else{acts.setSortKey(k);acts.setSortDir("asc");}}} groupBy={acts.groupBy} onGroupByChange={function(k){acts.setGroupBy(k);}} searchQuery={acts.nodeSearch} onSearchChange={function(q){acts.setNodeSearch(q);}}/>
+
+    {/* Table or Kanban view */}
+    {vm==="table"&&seedRows.length>0&&<div style={{overflowX:"auto",marginTop:8}}>
       <NodeBoard nodeConfig={nodeConfig} rows={seedRows}
-        onCellEdit={ce?function(rowId,key,val){acts.seedUpdateCell(nid,rowId,key,val);}:undefined}
-        onAddRow={ce?function(){var newId="new_"+Date.now();var name=prompt("Name:");if(!name||!name.trim())return;var row={id:newId,name:name.trim(),description:""};nodeConfig.columns.forEach(function(col){if(!row[col.key]){if(col.type==="progress"||col.type==="number")row[col.key]=0;else if(col.type==="status")row[col.key]="planned";else if(col.type==="priority")row[col.key]="medium";else if(col.type==="person")row[col.key]="Jero";else row[col.key]="";}});acts.seedAddRow(nid,row);}:undefined}
-        onDeleteRow={ce?function(rowId){if(confirm("Delete this entry?"))acts.seedDeleteRow(nid,rowId);}:undefined}
+        onCellEdit={ce?function(rowId,key,val){acts.seedUpdateCell(nid,rowId,key,val);acts.logActivity("edit",nid,nodeConfig.label,"Updated "+key);}:undefined}
+        onAddRow={ce?addNewRow:undefined}
+        onDeleteRow={ce?function(rowId){if(confirm("Delete?"))acts.seedDeleteRow(nid,rowId);acts.logActivity("delete",nid,nodeConfig.label,"Deleted row");}:undefined}
       />
     </div>}
+    {vm==="kanban"&&<KanbanView rows={seedRows} statusKey="status" labelKey={nodeConfig.columns[0]?nodeConfig.columns[0].key:"name"} onStatusChange={ce?function(rowId,newStatus){acts.seedUpdateCell(nid,rowId,"status",newStatus);acts.logActivity("status_change",nid,nodeConfig.label,"Status → "+newStatus);}:undefined}/>}
     {seedRows.length===0&&<div style={{padding:20,textAlign:"center",color:C.tx3,fontSize:13}}>No data yet.</div>}
+
+    {/* Relations */}
+    <div style={{marginTop:16}}><RelationsPanel nodeId={nid} relations={nodeRels} allNodes={acts.allNodesList} canEdit={ce} onAddRelation={function(r){var nr=Object.assign({id:"rel_"+Date.now()},r);acts.setRelations(function(p){return p.concat([nr]);});acts.logActivity("create",nid,nodeConfig.label,"Added relation: "+r.type+" → "+r.targetId);}} onDeleteRelation={function(id){acts.setRelations(function(p){return p.filter(function(r){return r.id!==id;});});}}/></div>
+
+    {/* Automations */}
+    {ce&&<div style={{marginTop:16}}><Sec>Automations</Sec><AutomationsPanel rules={acts.automations.filter(function(a){return true;})} onAddRule={function(rule){acts.setAutomations(function(p){return p.concat([rule]);});acts.logActivity("automation",nid,nodeConfig.label,"Created automation: "+rule.name);}} onDeleteRule={function(id){acts.setAutomations(function(p){return p.filter(function(r){return r.id!==id;});});}} onToggleRule={function(id){acts.setAutomations(function(p){return p.map(function(r){return r.id===id?Object.assign({},r,{enabled:!r.enabled}):r;});});}} agents={AGENTS.map(function(a){return{id:a.id,name:a.name,icon:a.icon};})}/></div>}
+
+    {/* Activity Feed */}
+    <div style={{marginTop:16}}><Sec>Activity</Sec><ActivityFeed events={(acts.activity||[]).filter(function(e){return e.nodeId===nid;}).slice(0,20)}/></div>
+
     <FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/>
   </div>);
 }
@@ -1068,6 +1101,32 @@ var seedUpdateCell=function(nodeId,rowId,key,val){setSeedEdits(function(prev){va
 // Persist seed edits to localStorage
 useEffect(function(){try{var saved=localStorage.getItem("dogma_seed_edits");if(saved)setSeedEdits(JSON.parse(saved));}catch(e){}},[]);
 useEffect(function(){try{localStorage.setItem("dogma_seed_edits",JSON.stringify(seedEdits));}catch(e){}},[seedEdits]);
+// View mode, filters, automations, relations, activity
+var _viewMode=useState("table"),viewMode=_viewMode[0],setViewMode=_viewMode[1]; // table | kanban
+var _filters=useState({}),filters=_filters[0],setFilters=_filters[1];
+var _sortKey=useState(""),sortKey=_sortKey[0],setSortKey=_sortKey[1];
+var _sortDir=useState("asc"),sortDir=_sortDir[0],setSortDir=_sortDir[1];
+var _groupBy=useState(""),groupBy=_groupBy[0],setGroupBy=_groupBy[1];
+var _nodeSearch=useState(""),nodeSearch=_nodeSearch[0],setNodeSearch=_nodeSearch[1];
+var _automations=useState([]),automations=_automations[0],setAutomations=_automations[1];
+var _relations=useState([]),relations=_relations[0],setRelations=_relations[1];
+var _activity=useState([]),activity=_activity[0],setActivity=_activity[1];
+// Persist automations/relations
+useEffect(function(){try{var s=localStorage.getItem("dogma_automations");if(s)setAutomations(JSON.parse(s));}catch(e){}},[]);
+useEffect(function(){try{localStorage.setItem("dogma_automations",JSON.stringify(automations));}catch(e){}},[automations]);
+useEffect(function(){try{var s=localStorage.getItem("dogma_relations");if(s)setRelations(JSON.parse(s));}catch(e){}},[]);
+useEffect(function(){try{localStorage.setItem("dogma_relations",JSON.stringify(relations));}catch(e){}},[relations]);
+var logActivity=function(type,nodeId,nodeLabel,desc){setActivity(function(prev){return[{id:"act_"+Date.now(),type:type,nodeId:nodeId,nodeLabel:nodeLabel,user:userName||"system",description:desc,timestamp:new Date().toISOString()}].concat(prev).slice(0,200);});};
+// Filter helper
+var applyFilters=function(rows,cols){
+  var result=rows;
+  if(nodeSearch){var q=nodeSearch.toLowerCase();result=result.filter(function(r){return Object.values(r).some(function(v){return String(v).toLowerCase().indexOf(q)>=0;});});}
+  Object.keys(filters).forEach(function(k){if(filters[k])result=result.filter(function(r){return String(r[k])===filters[k];});});
+  if(sortKey){result=result.slice().sort(function(a,b){var va=a[sortKey]||"",vb=b[sortKey]||"";if(typeof va==="number"&&typeof vb==="number")return sortDir==="asc"?va-vb:vb-va;return sortDir==="asc"?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va));});}
+  return result;
+};
+// Flatten all nodes for relations picker
+var allNodesList=useMemo(function(){var list=[];function walk(nodes){nodes.forEach(function(n){list.push({id:n.id,label:n.label,icon:n.icon});if(n.children)walk(n.children);});}walk(liveTree);return list;},[liveTree]);
 var _designGuide=useState("DOGMA Brand: Navy #0A0A18 bg, Gold #C8A74B accents, Inter body, JetBrains Mono code. Reports: dark luxury, gold headers, metric grids, badges (pass=green fail=red warn=amber). Always include DOGMA header + confidential footer."),designGuide=_designGuide[0],setDesignGuide=_designGuide[1];
 var _designImages=useState([]),designImages=_designImages[0],setDesignImages=_designImages[1];
 var _showThinking=useState(false),showThinking=_showThinking[0],setShowThinking=_showThinking[1];
@@ -1369,7 +1428,7 @@ var removeSubItem=function(col,eid,field,idx){
   });
   addLog("Removed item from "+col+"/"+eid+"."+field);
 };
-var acts={addNote:addNote,advP:advP,advI:advI,resInc:resInc,togTask:togTask,updateField:updateField,updateArrayField:updateArrayField,updateFin:updateFin,canEdit:canEdit,canGen:canGen,persistField:persistField,apiCreate:apiCreate,apiDelete:apiDelete,apiSave:apiSave,addSubItem:addSubItem,editSubItem:editSubItem,removeSubItem:removeSubItem,showCreateForm:function(type){setShowCreate({type:type});},getSeedRows:getSeedRows,seedAddRow:seedAddRow,seedDeleteRow:seedDeleteRow,seedUpdateCell:seedUpdateCell,addNodeToTree:addNodeToTree,deleteNodeFromTree:deleteNodeFromTree,liveTree:liveTree};
+var acts={addNote:addNote,advP:advP,advI:advI,resInc:resInc,togTask:togTask,updateField:updateField,updateArrayField:updateArrayField,updateFin:updateFin,canEdit:canEdit,canGen:canGen,persistField:persistField,apiCreate:apiCreate,apiDelete:apiDelete,apiSave:apiSave,addSubItem:addSubItem,editSubItem:editSubItem,removeSubItem:removeSubItem,showCreateForm:function(type){setShowCreate({type:type});},getSeedRows:getSeedRows,seedAddRow:seedAddRow,seedDeleteRow:seedDeleteRow,seedUpdateCell:seedUpdateCell,addNodeToTree:addNodeToTree,deleteNodeFromTree:deleteNodeFromTree,liveTree:liveTree,viewMode:viewMode,setViewMode:setViewMode,filters:filters,setFilters:setFilters,sortKey:sortKey,setSortKey:setSortKey,sortDir:sortDir,setSortDir:setSortDir,groupBy:groupBy,setGroupBy:setGroupBy,nodeSearch:nodeSearch,setNodeSearch:setNodeSearch,applyFilters:applyFilters,automations:automations,setAutomations:setAutomations,relations:relations,setRelations:setRelations,activity:activity,logActivity:logActivity,allNodesList:allNodesList};
 
 var allSubs=useMemo(function(){var r=[];Object.keys(xp).forEach(function(k){if(xp[k])r=r.concat(getSubs(k,D,NODES));});return r;},[xp,D,NODES]);
 var allSSubs=useMemo(function(){var r=[];Object.keys(xp2).forEach(function(k){if(xp2[k]){var s=allSubs.find(function(x){return x.id===k;});if(s)r=r.concat(getSSubs(s));}});return r;},[xp2,allSubs]);
