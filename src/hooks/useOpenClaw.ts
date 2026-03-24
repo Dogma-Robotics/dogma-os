@@ -15,19 +15,15 @@ export function useOpenClaw() {
   const [sessionId, setSessionId] = useState<string|null>(null)
   const [loading, setLoading] = useState(false)
 
-  // Health check: try /v1/chat/completions with a tiny request
+  // Health check: use proxy to avoid CORS
   const checkGateway = useCallback(async () => {
     try {
       const c = new AbortController()
       const t = setTimeout(() => c.abort(), 3000)
-      const r = await fetch(GW + '/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN },
-        body: JSON.stringify({ model: 'openclaw', messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 }),
-        signal: c.signal,
-      })
+      // Check via proxy (avoids CORS) — just fetch the root HTML
+      const r = await fetch('/api/openclaw', { signal: c.signal })
       clearTimeout(t)
-      if (r.ok) {
+      if (r.ok && r.status !== 502) {
         setGateway({ connected: true, version: 'local', model: 'openclaw' })
         return
       }
@@ -52,7 +48,7 @@ export function useOpenClaw() {
           if (sysMsg) msgs.push({ role: 'system', content: sysMsg })
           msgs.push({ role: 'user', content: message })
 
-          const r = await fetch(GW + '/v1/chat/completions', {
+          const r = await fetch('/api/openclaw/v1/chat/completions', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
