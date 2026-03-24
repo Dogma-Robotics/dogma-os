@@ -192,7 +192,7 @@ function getBlocks(entityId,deps){
 }
 // NODES and LINKS are now computed inside Dashboard via useMemo on liveTree
 
-function getSubs(pid,D){var R=3.5;var items=[];
+function getSubs(pid,D,nodesArray){var R=3.5;var items=[];
 if(pid==="rd"){items=D.ss.map(function(s){return{id:s.id,label:s.name,metric:s.mat+"%",color:dc(s.status),r:0.45,type:"ss",data:s};}).concat(D.skills.map(function(s){return{id:s.id,label:s.name,metric:s.success+"%",color:dc(s.status),r:0.45,type:"skill",data:s};}));}
 else if(pid==="experiments"){items=D.exps.map(function(e){return{id:e.id,label:e.id,metric:e.outcome,color:dc(e.outcome),r:0.4,type:"exp",data:e};});}
 else if(pid==="incidents"){items=D.incidents.map(function(i){return{id:i.id,label:i.id,metric:i.status,color:dc(i.status),r:0.4,type:"inc",data:i};});}
@@ -202,7 +202,7 @@ else if(pid==="fundraising"){items=D.investors.map(function(v){return{id:v.id,la
 else if(pid==="team"){items=D.tasks.map(function(t){var pct=t.pct||0;return{id:t.id,label:t.title,metric:(pct||0)+"%",color:t.status==="done"?C.g:dc(t.pri),r:0.4,type:"task",data:t};});}
 else if(pid==="finance"){var fi=D.fin;items=[{id:"fn_b",label:"Burn",metric:"$"+(fi.burn/1000).toFixed(1)+"K",color:C.r,r:0.45,type:"fmet",data:{n:"Monthly Burn Rate",v:"$"+(fi.burn/1000).toFixed(1)+"K/mo",d:fi.spend.map(function(s){return s.c+": $"+(s.a/1000).toFixed(1)+"K";})}},{id:"fn_c",label:"Cash",metric:"$"+(fi.cash/1000).toFixed(0)+"K",color:C.a,r:0.45,type:"fmet",data:{n:"Cash Position",v:"$"+fi.cash,d:["Current bank balance"]}},{id:"fn_r",label:"Runway",metric:fi.runway+"mo",color:fi.runway<4?C.r:C.a,r:0.45,type:"fmet",data:{n:"Runway",v:fi.runway+" months remaining",d:[fi.runway<4?"CRITICAL: Less than 4 months runway. Fundraising is survival priority.":"Manageable but tight. Monitor monthly."]}},{id:"fn_m",label:"BOM",metric:"$"+(fi.bom/1000).toFixed(1)+"K",color:C.gold,r:0.45,type:"fmet",data:{n:"BOM Cost - Genesis Hand v0.7",v:"$"+fi.bom+" per unit",d:["142 unique components","8 components pending from batch #5","Target: sub-$3K at 100-unit volume"]}}].concat(D.supply.map(function(s){return{id:s.id,label:s.item.slice(0,12),metric:s.risk,color:dc(s.risk==="high"?"critical":"active"),r:0.4,type:"sply",data:s};}));}
 else if(pid==="roadmap"){items=D.milestones.map(function(m){return{id:m.id,label:m.title,metric:m.pct+"%",color:m.risk==="critical"?C.r:m.risk==="high"?C.a:C.g,r:0.45,type:"ms",data:m};}).concat(D.safety.map(function(sf){return{id:sf.id,label:sf.name,metric:sf.cov+"%",color:sf.cov>70?C.g:sf.cov>50?C.a:C.r,r:0.4,type:"safe",data:sf};}));}
-var p=NODES.find(function(n){return n.id===pid;});if(!p)return[];
+var p=(nodesArray||[]).find(function(n){return n.id===pid;});if(!p)return[];
 return items.map(function(it,i){var a=(i/items.length)*6.2832;return Object.assign({},it,{pos:[p.pos[0]+Math.cos(a)*R,p.pos[1]+Math.sin(a)*R*0.6,p.pos[2]+Math.sin(a+1)*0.7],parent:pid});});}
 
 function getSSubs(sub){if(!sub||!sub.data)return[];var d=sub.data;var items=[];
@@ -1371,7 +1371,7 @@ var removeSubItem=function(col,eid,field,idx){
 };
 var acts={addNote:addNote,advP:advP,advI:advI,resInc:resInc,togTask:togTask,updateField:updateField,updateArrayField:updateArrayField,updateFin:updateFin,canEdit:canEdit,canGen:canGen,persistField:persistField,apiCreate:apiCreate,apiDelete:apiDelete,apiSave:apiSave,addSubItem:addSubItem,editSubItem:editSubItem,removeSubItem:removeSubItem,showCreateForm:function(type){setShowCreate({type:type});},getSeedRows:getSeedRows,seedAddRow:seedAddRow,seedDeleteRow:seedDeleteRow,seedUpdateCell:seedUpdateCell,addNodeToTree:addNodeToTree,deleteNodeFromTree:deleteNodeFromTree,liveTree:liveTree};
 
-var allSubs=useMemo(function(){var r=[];Object.keys(xp).forEach(function(k){if(xp[k])r=r.concat(getSubs(k,D));});return r;},[xp,D]);
+var allSubs=useMemo(function(){var r=[];Object.keys(xp).forEach(function(k){if(xp[k])r=r.concat(getSubs(k,D,NODES));});return r;},[xp,D,NODES]);
 var allSSubs=useMemo(function(){var r=[];Object.keys(xp2).forEach(function(k){if(xp2[k]){var s=allSubs.find(function(x){return x.id===k;});if(s)r=r.concat(getSSubs(s));}});return r;},[xp2,allSubs]);
 var oI=D.incidents.filter(function(i){return i.status!=="resolved";}).length;
 var cr=D.tasks.filter(function(t){return t.pri==="critical"&&t.status!=="done";}).length;
@@ -1671,7 +1671,7 @@ if(sel){
   else if(sel.level==="ssub"){var ssn2=allSSubs.find(function(s){return s.id===sel.id;});if(ssn2){pageTitle=ssn2.label;pageContent=<LeafPage leaf={ssn2} acts={acts}/>;}}
 }
 
-return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.bg,display:"flex",flexDirection:"column",fontFamily:"'Instrument Sans',sans-serif",color:C.tx}}>
+return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.bg,display:"flex",flexDirection:"column",fontFamily:"'Instrument Sans',sans-serif",color:C.tx}}>
   {/* Create Form Modal */}
   {showCreate&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center"}} onMouseDown={function(e){if(e.target===e.currentTarget){setShowCreate(null);setCreateForm({});}}}>
     <div style={{background:C.bg1,border:"1px solid "+C.gold+"40",borderRadius:8,padding:24,width:420,maxHeight:"80vh",overflowY:"auto"}} onMouseDown={function(e){e.stopPropagation();}}>
