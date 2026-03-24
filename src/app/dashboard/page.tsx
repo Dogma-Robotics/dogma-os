@@ -1671,7 +1671,10 @@ if(sel){
   else if(sel.level==="ssub"){var ssn2=allSSubs.find(function(s){return s.id===sel.id;});if(ssn2){pageTitle=ssn2.label;pageContent=<LeafPage leaf={ssn2} acts={acts}/>;}}
 }
 
-return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.bg,display:"flex",flexDirection:"column",fontFamily:"'Instrument Sans',sans-serif",color:C.tx}}>
+// Don't render full dashboard until client mount to prevent hydration mismatches
+if(!mounted)return(<div style={{width:"100vw",height:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Instrument Sans',sans-serif"}}><div style={{textAlign:"center"}}><div style={{width:40,height:40,background:C.gold,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}><span style={{color:C.bg,fontWeight:900,fontSize:20,fontFamily:"monospace"}}>D</span></div><div style={{color:C.gold,fontSize:16,fontWeight:700}}>DOGMA OS</div><div style={{color:C.tx3,fontSize:12,marginTop:4}}>Loading...</div></div></div>);
+
+return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.bg,display:"flex",flexDirection:"column",fontFamily:"'Instrument Sans',sans-serif",color:C.tx}}>
   {/* Create Form Modal */}
   {showCreate&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center"}} onMouseDown={function(e){if(e.target===e.currentTarget){setShowCreate(null);setCreateForm({});}}}>
     <div style={{background:C.bg1,border:"1px solid "+C.gold+"40",borderRadius:8,padding:24,width:420,maxHeight:"80vh",overflowY:"auto"}} onMouseDown={function(e){e.stopPropagation();}}>
