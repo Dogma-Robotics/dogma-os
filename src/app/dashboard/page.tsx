@@ -5,7 +5,8 @@ import dynamic from "next/dynamic";
 import { useOpenClaw } from '@/hooks/useOpenClaw';
 var THREE = typeof window !== "undefined" ? require("three") : null;
 
-var C={bg:"#030308",bg1:"#060610",bg2:"#0A0A18",bg3:"#0E0E20",bd:"#1A1A35",gold:"#C8A74B",gD:"rgba(200,167,75,0.06)",tx:"#C8C4BC",tx2:"#6E6A84",tx3:"#444060",g:"#2D7A5D",r:"#8A3333",a:"#A78530",b:"#3A5A7A",c:"#3A7A7A"};
+function getTheme(dark){return dark?{bg:"#030308",bg1:"#060610",bg2:"#0A0A18",bg3:"#0E0E20",bd:"#1A1A35",gold:"#C8A74B",gD:"rgba(200,167,75,0.06)",tx:"#C8C4BC",tx2:"#6E6A84",tx3:"#444060",g:"#2D7A5D",r:"#8A3333",a:"#A78530",b:"#3A5A7A",c:"#3A7A7A"}:{bg:"#B0AEA4",bg1:"#A8A69C",bg2:"#9F9D94",bg3:"#96948C",bd:"#8A8880",gold:"#9A7B2E",gD:"rgba(154,123,46,0.06)",tx:"#1A1A2E",tx2:"#5C5878",tx3:"#9994B0",g:"#1B6B4A",r:"#A33333",a:"#8A6A1E",b:"#2A4A6A",c:"#2A6A6A"};}
+var C=getTheme(true);
 var nw=function(){return new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});};
 var dy=function(){return new Date().toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});};
 function dc(s){return"pass validated active resolved low done".split(" ").indexOf(s)>=0?C.g:"fail blocked critical open high".split(" ").indexOf(s)>=0?C.r:"partial testing progress medium investigating iterating dev build progressing".split(" ").indexOf(s)>=0?C.a:C.b;}
@@ -57,41 +58,8 @@ function EText({text,canEdit,onSave}){
 function NoteBox({notes,onAdd}){var ref=useRef(null);var go=function(){if(ref.current&&ref.current.value.trim()){onAdd(ref.current.value.trim());ref.current.value="";}};return <div style={{marginTop:10}}><Sec>Notes ({(notes||[]).length})</Sec>{(notes||[]).map(function(n,i){return <div key={i} style={{padding:"6px 8px",background:C.bg,borderRadius:3,marginBottom:3,borderLeft:"2px solid "+C.gold+"20",fontSize:13,color:C.tx,lineHeight:1.5}}>{n.t}<div style={{fontSize:11,color:C.tx3,marginTop:2}}>{n.by} - {n.at}</div></div>;})}<div style={{display:"flex",gap:4,marginTop:4}}><input ref={ref} placeholder="Add note..." style={{flex:1,padding:"6px 10px",fontSize:13,background:C.bg,border:"1px solid "+C.bd,borderRadius:3,color:C.tx,outline:"none"}} onKeyDown={function(e){if(e.key==="Enter")go();}}/><Btn v="gold" onClick={go}>+</Btn></div></div>;}
 
 
-// Code block with copy button
-function CodeBlock({code,lang}){
-  var _copied=useState(false),copied=_copied[0],setCopied=_copied[1];
-  var copy=function(){navigator.clipboard.writeText(code).then(function(){setCopied(true);setTimeout(function(){setCopied(false);},2000);});};
-  return <div style={{position:"relative",margin:"8px 0",borderRadius:6,overflow:"hidden",border:"1px solid "+C.bd}}>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 12px",background:C.bg3,borderBottom:"1px solid "+C.bd}}>
-      <span style={{fontSize:11,color:C.tx3,fontFamily:"'JetBrains Mono',monospace"}}>{lang||"code"}</span>
-      <span onClick={copy} style={{fontSize:11,color:copied?C.g:C.tx3,cursor:"pointer",padding:"2px 8px",borderRadius:3,background:copied?C.g+"15":"transparent",border:"1px solid "+(copied?C.g+"30":"transparent"),transition:"all 0.2s",userSelect:"none"}}>{copied?"Copied":"Copy"}</span>
-    </div>
-    <pre style={{margin:0,padding:"12px 16px",background:C.bg,overflowX:"auto",fontSize:13,lineHeight:1.6,fontFamily:"'JetBrains Mono',monospace",color:C.tx}}>{code}</pre>
-  </div>;
-}
-
-// Render message text with code blocks
-function MsgText({text}){
-  if(!text)return null;
-  var parts=text.split(/(```[\s\S]*?```)/g);
-  return <>{parts.map(function(part,i){
-    if(part.startsWith("```")){
-      var lines=part.slice(3,-3).split("\n");
-      var lang=lines[0].trim();
-      var code=lang?lines.slice(1).join("\n"):lines.join("\n");
-      if(!lang)lang="";
-      return <CodeBlock key={i} code={code} lang={lang}/>;
-    }
-    // Also handle inline code with backticks
-    var inlineParts=part.split(/(`[^`]+`)/g);
-    return <span key={i}>{inlineParts.map(function(ip,j){
-      if(ip.startsWith("`")&&ip.endsWith("`")){
-        return <code key={j} style={{padding:"1px 6px",borderRadius:3,background:C.bg3,color:C.gold,fontSize:12,fontFamily:"'JetBrains Mono',monospace",border:"1px solid "+C.bd}}>{ip.slice(1,-1)}</code>;
-      }
-      return ip;
-    })}</span>;
-  })}</>;
-}
+function CodeBlock({code,lang}){var _cp=useState(false),copied=_cp[0],setCopied=_cp[1];var copy=function(){navigator.clipboard.writeText(code).then(function(){setCopied(true);setTimeout(function(){setCopied(false);},2000);});};return <div style={{position:"relative",margin:"8px 0",borderRadius:6,overflow:"hidden",border:"1px solid "+C.bd}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 12px",background:C.bg3,borderBottom:"1px solid "+C.bd}}><span style={{fontSize:11,color:C.tx3,fontFamily:"'JetBrains Mono',monospace"}}>{lang||"code"}</span><span onClick={copy} style={{fontSize:11,color:copied?C.g:C.tx3,cursor:"pointer",padding:"2px 8px",borderRadius:3,background:copied?C.g+"15":"transparent",border:"1px solid "+(copied?C.g+"30":"transparent"),userSelect:"none"}}>{copied?"Copied":"Copy"}</span></div><pre style={{margin:0,padding:"12px 16px",background:C.bg,overflowX:"auto",fontSize:13,lineHeight:1.6,fontFamily:"'JetBrains Mono',monospace",color:C.tx}}>{code}</pre></div>;}
+function MsgText({text}){if(!text)return null;var parts=text.split(/(```[\s\S]*?```)/g);return <>{parts.map(function(part,i){if(part.startsWith("```")){var lines=part.slice(3,-3).split("\n");var lang=lines[0].trim();var code=lang?lines.slice(1).join("\n"):lines.join("\n");if(!lang)lang="";return <CodeBlock key={i} code={code} lang={lang}/>;} var inlineParts=part.split(/(`[^`]+`)/g);return <span key={i}>{inlineParts.map(function(ip,j){if(ip.startsWith("`")&&ip.endsWith("`")){return <code key={j} style={{padding:"1px 6px",borderRadius:3,background:C.bg3,color:C.gold,fontSize:12,fontFamily:"'JetBrains Mono',monospace",border:"1px solid "+C.bd}}>{ip.slice(1,-1)}</code>;}return ip;})}</span>;})}</>;}
 
 // File upload component per node
 function FileUpload({nodeId,files,onUpload,onRemove}){
@@ -1035,13 +1003,22 @@ var AGENT_CATEGORIES=[
 ];
 
 export default function Dashboard(){
-var _s=useState(seed),D=_s[0],setD=_s[1];
+var _dark=useState(true),isDark=_dark[0],setIsDark=_dark[1];
+C=getTheme(isDark);
+var _designGuide=useState("DOGMA Brand: Navy #0A0A18 bg, Gold #C8A74B accents, Inter body, JetBrains Mono code. Reports: dark luxury, gold headers, metric grids, badges (pass=green fail=red warn=amber). Always include DOGMA header + confidential footer."),designGuide=_designGuide[0],setDesignGuide=_designGuide[1];
+var _showThinking=useState(false),showThinking=_showThinking[0],setShowThinking=_showThinking[1];
+var _streamingMsg=useState(null),streamingMsg=_streamingMsg[0],setStreamingMsg=_streamingMsg[1];
 var oc=useOpenClaw();
+var _s=useState(seed),D=_s[0],setD=_s[1];
 var _userInfo=useState({name:'',role:'',loaded:false}),userInfo=_userInfo[0],setUserInfo=_userInfo[1];
 var _pendingMutations=useState([]),pendingMuts=_pendingMutations[0],setPendingMuts=_pendingMutations[1];
 var _approvalMode=useState('advisory'),approvalMode=_approvalMode[0],setApprovalMode=_approvalMode[1];
 
 // Load data from API on mount
+useEffect(function(){try{var t=localStorage.getItem("dogma-theme");if(t==="light")setIsDark(false);}catch(e){}},[]);
+useEffect(function(){try{localStorage.setItem("dogma-theme",isDark?"dark":"light");}catch(e){}},[isDark]);
+useEffect(function(){try{var g=localStorage.getItem("dogma-design-guide");if(g)setDesignGuide(g);}catch(e){}},[]);
+useEffect(function(){try{localStorage.setItem("dogma-design-guide",designGuide);}catch(e){}},[designGuide]);
 useEffect(function(){
   fetch("/api/dashboard/summary").then(function(r){return r.json();}).then(function(data){
     if(data.error||!data.ss)return; // fallback to seed
@@ -1338,7 +1315,7 @@ var am=Math.round(D.ss.reduce(function(a,s){return a+s.mat;},0)/D.ss.length);
 // 3D
 var makeLabel=function(text,fs,color){var cv=document.createElement("canvas");cv.width=1024;cv.height=512;var ctx=cv.getContext("2d");ctx.font="bold "+(fs||48)+"px monospace";ctx.textAlign="center";ctx.textBaseline="middle";ctx.shadowColor="rgba(0,0,0,0.85)";ctx.shadowBlur=10;ctx.fillStyle=color||"#C8C4BC";ctx.fillText(text,512,256);var tex=new THREE.CanvasTexture(cv);tex.needsUpdate=true;var mat=new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false});var sp=new THREE.Sprite(mat);var sc=3.0*(fs||48)/48;sp.scale.set(sc,sc*0.5,1);sp.userData={dogma:true};return sp;};
 
-useEffect(function(){var el=canvasRef.current;if(!el)return;var W=el.clientWidth;var H=el.clientHeight;var scene=new THREE.Scene();sceneRef.current=scene;var cam=new THREE.PerspectiveCamera(50,W/H,0.1,500);cam.position.set(0,0,24);camRef.current=cam;var rend=new THREE.WebGLRenderer({canvas:el,antialias:true,alpha:true});rend.setSize(W,H);rend.setPixelRatio(Math.min(window.devicePixelRatio,2));rend.setClearColor(0x030308,1);rendRef.current=rend;scene.add(new THREE.AmbientLight(0xffffff,0.4));var dl=new THREE.DirectionalLight(0xC8A74B,0.5);dl.position.set(5,8,15);scene.add(dl);
+useEffect(function(){var el=canvasRef.current;if(!el)return;var W=el.clientWidth;var H=el.clientHeight;var scene=new THREE.Scene();sceneRef.current=scene;var cam=new THREE.PerspectiveCamera(50,W/H,0.1,500);cam.position.set(0,0,24);camRef.current=cam;var rend=new THREE.WebGLRenderer({canvas:el,antialias:true,alpha:true});rend.setSize(W,H);rend.setPixelRatio(Math.min(window.devicePixelRatio,2));rend.setClearColor(new THREE.Color(C.bg),1);rendRef.current=rend;scene.add(new THREE.AmbientLight(0xffffff,0.4));var dl=new THREE.DirectionalLight(0xC8A74B,0.5);dl.position.set(5,8,15);scene.add(dl);
 var anim=function(){frameRef.current=requestAnimationFrame(anim);var t=Date.now()*0.001;
 // Animate all dogma meshes
 scene.children.forEach(function(c){if(c.userData&&c.userData.dogma){
@@ -1366,7 +1343,7 @@ scene.children.forEach(function(c){if(c.userData&&c.userData.dogma){
     }
   }
 }});
-rend.render(scene,cam);var rect=el.getBoundingClientRect();var nv=[];var all=[];NODES.forEach(function(n){all.push({id:n.id,pos:n.pos,level:"main",label:n.label,r:n.r});});if(overlayRef.current.subs)(overlayRef.current.subs).forEach(function(s){all.push(s);});if(overlayRef.current.ssubs)(overlayRef.current.ssubs).forEach(function(s){all.push(s);});all.forEach(function(n){var v=new THREE.Vector3(n.pos[0],n.pos[1],n.pos[2]);v.project(cam);if(v.z>0&&v.z<1)nv.push({id:n.id,x:(v.x*0.5+0.5)*rect.width,y:(-v.y*0.5+0.5)*rect.height,level:n.level,label:n.label,r:n.r||0.4});});overlayRef.current.pos=nv;};anim();
+rend.setClearColor(new THREE.Color(C.bg),1);rend.render(scene,cam);var rect=el.getBoundingClientRect();var nv=[];var all=[];NODES.forEach(function(n){all.push({id:n.id,pos:n.pos,level:"main",label:n.label,r:n.r});});if(overlayRef.current.subs)(overlayRef.current.subs).forEach(function(s){all.push(s);});if(overlayRef.current.ssubs)(overlayRef.current.ssubs).forEach(function(s){all.push(s);});all.forEach(function(n){var v=new THREE.Vector3(n.pos[0],n.pos[1],n.pos[2]);v.project(cam);if(v.z>0&&v.z<1)nv.push({id:n.id,x:(v.x*0.5+0.5)*rect.width,y:(-v.y*0.5+0.5)*rect.height,level:n.level,label:n.label,r:n.r||0.4});});overlayRef.current.pos=nv;};anim();
 var intv=setInterval(function(){if(overlayRef.current.pos)setOverlay(overlayRef.current.pos);},100);
 var onR=function(){W=el.clientWidth;H=el.clientHeight;cam.aspect=W/H;cam.updateProjectionMatrix();rend.setSize(W,H);};window.addEventListener("resize",onR);return function(){cancelAnimationFrame(frameRef.current);clearInterval(intv);window.removeEventListener("resize",onR);rend.dispose();};},[]);
 
@@ -1562,9 +1539,27 @@ var sendAgent=function(){if(!inp.trim()||ld)return;var userTxt=inp.trim();setInp
   if(D.pilotDeadlines)dataSnap+="|DEADLINES:"+Object.keys(D.pilotDeadlines).map(function(k){return k+":"+D.pilotDeadlines[k].needBy;}).join(",");
 
   // Backend handles tool_use loop + MCP connections
-  oc.sendMessage(agentId,userTxt,{dataContext:dataSnap,mode:approvalMode})
-  .then(function(result){
-    var data={text:result.text||"(no response)",files:result.files||[],toolCalls:result.toolCalls||[],mutations:[],mcpConnected:[],user:null,gateway:{connected:result.via==="gateway"}};
+  fetch("/api/chat",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({message:userTxt,agentId:agentId,dataContext:dataSnap,mode:approvalMode,designGuide:designGuide,showThinking:showThinking,stream:true})
+  }).then(function(res){
+    if(!res.body){throw new Error("No response body");}
+    var reader=res.body.getReader();var decoder=new TextDecoder();var fullText="";var thinkText="";
+    setStreamingMsg({agentId:agentId,text:"",thinking:"",done:false});
+    function pump(){return reader.read().then(function(result){
+      if(result.done){setStreamingMsg(null);return{text:fullText,gateway:{connected:false}};}
+      var chunk=decoder.decode(result.value,{stream:true});var lines=chunk.split("\n");
+      for(var li=0;li<lines.length;li++){var line=lines[li];
+        if(line.startsWith("data: ")){var payload=line.slice(6);if(payload==="[DONE]")continue;
+          try{var ev=JSON.parse(payload);
+            if(ev.type==="thinking"){thinkText+=ev.text;setStreamingMsg(function(p){return p?Object.assign({},p,{thinking:thinkText}):p;});}
+            else if(ev.type==="text"){fullText+=ev.text;setStreamingMsg(function(p){return p?Object.assign({},p,{text:fullText}):p;});}
+            else if(ev.type==="done"){setStreamingMsg(null);return{text:fullText||ev.text||"(no response)",gateway:ev.gateway||{connected:false}};}
+          }catch(e){}}}
+      return pump();});}
+    return pump();
+  }).then(function(data){
     var text=data.text||"(empty)";
     if(data.mcpConnected&&data.mcpConnected.length>0)setMcpConn(data.mcpConnected);
     if(data.user&&data.user.role&&!userInfo.loaded)setUserInfo({name:data.user.name||'',role:data.user.role||'',loaded:true});
@@ -1574,7 +1569,7 @@ var sendAgent=function(){if(!inp.trim()||ld)return;var userTxt=inp.trim();setInp
       setPendingMuts(function(prev){return prev.concat(mutations.map(function(m){return Object.assign({},m,{status:"pending",at:nw(),agent:agentId});}));});
       text+="\\n\\n\uD83D\uDD12 "+mutations.length+" mutation(s) proposed (advisory mode). Review in approval queue.";
     }
-    setMsgs(function(prev){var n=Object.assign({},prev);n[agentId]=(n[agentId]||[]).concat([{role:"ai",text:text,files:files,mutations:mutations}]);return n;});
+    setMsgs(function(prev){var n=Object.assign({},prev);n[agentId]=(n[agentId]||[]).concat([{role:"ai",via:(data.gateway&&data.gateway.connected)?"openclaw":"cloud",text:text,files:files,mutations:mutations}]);return n;});
     // If agent made data mutations, refresh local state from Supabase
     if(mutations.length>0){
       fetch("/api/dashboard/summary").then(function(r){return r.json();}).then(function(data){
@@ -1879,7 +1874,7 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
       {/* Mode toggle: Chat / Swarm */}
-      <div style={{display:"flex",borderBottom:"1px solid "+C.bd,flexShrink:0}}>
+      <div style={{display:"flex",borderBottom:"1px solid "+C.bd,flexShrink:0,position:"relative"}}><div onClick={function(){setIsDark(function(d){return !d;});}} style={{position:"absolute",right:8,top:5,cursor:"pointer",fontSize:9,padding:"2px 8px",borderRadius:3,background:C.bg3,color:C.tx2,border:"1px solid "+C.bd,zIndex:5}}>{isDark?"Light":"Dark"}</div>
         <div onClick={function(){setMode("chat");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="chat"?C.gold:C.tx3,borderBottom:mode==="chat"?"2px solid "+C.gold:"2px solid transparent",background:mode==="chat"?C.gold+"08":"transparent"}}>💬 Chat</div>
         
         <div onClick={function(){setMode("openclaw");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="openclaw"?C.gold:C.tx3,borderBottom:mode==="openclaw"?"2px solid "+C.gold:"2px solid transparent",background:mode==="openclaw"?C.gold+"08":"transparent"}}>OpenClaw</div>
@@ -1906,7 +1901,7 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
       </div>
       <div style={{flex:1,overflowY:"auto",padding:10,display:"flex",flexDirection:"column",gap:4}}>
         {curMsgs.length===0&&<div style={{fontSize:13,color:C.tx3,textAlign:"center",padding:20}}>Ask {curAgent.name}<br/><span style={{fontSize:11}}>Single agent — direct conversation</span></div>}
-        {curMsgs.map(function(msg,i){return <div key={i} style={{maxWidth:"90%",alignSelf:msg.role==="user"?"flex-end":"flex-start"}}><div style={{padding:"6px 10px",borderRadius:6,background:msg.role==="user"?C.bg3:C.bg2,borderLeft:msg.role==="ai"?"2px solid "+curAgent.color:"none",fontSize:13,color:C.tx,lineHeight:1.5,whiteSpace:"pre-wrap"}}><MsgText text={msg.text}/></div>{msg.files&&msg.files.length>0&&msg.files.map(function(f,j){var isH=f.name&&f.name.endsWith(".html");return <div key={j} style={{marginTop:3}}>
+        {curMsgs.map(function(msg,i){return <div key={i} style={{maxWidth:"90%",alignSelf:msg.role==="user"?"flex-end":"flex-start"}}><div style={{padding:"6px 10px",borderRadius:6,background:msg.role==="user"?C.bg3:C.bg2,borderLeft:msg.role==="ai"?"2px solid "+(msg.via==="openclaw"?"#2D7A5D":curAgent.color):"none",fontSize:13,color:C.tx,lineHeight:1.5,whiteSpace:"pre-wrap"}}><MsgText text={msg.text}/></div>{msg.files&&msg.files.length>0&&msg.files.map(function(f,j){var isH=f.name&&f.name.endsWith(".html");return <div key={j} style={{marginTop:3}}>
 <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 8px",background:C.bg,border:"1px solid "+C.gold+"30",borderRadius:4,cursor:"pointer"}}>
 <span style={{fontSize:16}}>{f.icon||"\uD83D\uDCC1"}</span>
 <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>{f.name}</div></div>
@@ -1914,8 +1909,13 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
 <span onClick={function(){if(f.url&&f.url!=="#"){var dl=document.createElement("a");dl.href=f.url;dl.download=f.name||"file";document.body.appendChild(dl);dl.click();document.body.removeChild(dl);}}} style={{color:C.gold,cursor:"pointer"}}>{"\u2B07"}</span>
 </div></div>;})}</div>;})}
         {ld&&<div style={{fontSize:12,color:curAgent.color,fontStyle:"italic",padding:4}}>{curAgent.name} working...</div>}
+        {streamingMsg&&streamingMsg.agentId===agentId&&<div style={{maxWidth:"90%",alignSelf:"flex-start"}}>
+          {showThinking&&streamingMsg.thinking&&<div style={{padding:"6px 10px",borderRadius:6,background:C.bg3,borderLeft:"2px solid "+C.a,fontSize:12,color:C.tx3,lineHeight:1.5,whiteSpace:"pre-wrap",marginBottom:4,maxHeight:200,overflowY:"auto"}}><div style={{fontSize:9,color:C.a,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700,marginBottom:4}}>Thinking...</div>{streamingMsg.thinking}</div>}
+          {streamingMsg.text&&<div style={{padding:"6px 10px",borderRadius:6,background:C.bg2,borderLeft:"2px solid "+curAgent.color,fontSize:13,color:C.tx,lineHeight:1.5,whiteSpace:"pre-wrap"}}><MsgText text={streamingMsg.text}/><span style={{display:"inline-block",width:6,height:14,background:C.gold,marginLeft:2,animation:"blink 1s infinite"}}></span></div>}
+        </div>}
         <div ref={chatEnd}/>
       </div>
+      <div style={{padding:"4px 10px",borderTop:"1px solid "+C.bd,display:"flex",gap:6,alignItems:"center",flexShrink:0}}><div onClick={function(){setShowThinking(function(v){return !v;});}} style={{fontSize:9,padding:"2px 8px",borderRadius:3,cursor:"pointer",background:showThinking?C.gold+"15":"transparent",color:showThinking?C.gold:C.tx3,border:"1px solid "+(showThinking?C.gold+"30":C.bd),userSelect:"none"}}>{showThinking?"Thinking ON":"Thinking"}</div><div onClick={function(){var t=prompt("DOGMA Design Guidelines (injected when generating docs):\n\n"+designGuide.slice(0,300)+"\n\nEnter new guidelines:");if(t)setDesignGuide(t);}} style={{fontSize:9,padding:"2px 8px",borderRadius:3,cursor:"pointer",color:C.tx3,border:"1px solid "+C.bd,userSelect:"none"}}>Design Guide</div></div>
       <div style={{padding:"8px 10px",borderTop:"1px solid "+C.bd,display:"flex",gap:4,flexShrink:0}}>
         <input value={inp} onChange={function(e){setInp(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")sendAgent();}} placeholder={"Ask "+curAgent.name+"..."} style={{flex:1,padding:"6px 10px",fontSize:13,background:C.bg,border:"1px solid "+C.bd,borderRadius:3,color:C.tx,outline:"none"}}/>
         <Btn v="gold" onClick={sendAgent}>{"\u2191"}</Btn>
@@ -2009,30 +2009,6 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
         </div>}
       </div>
       </>}
-
-      {mode==="openclaw"&&<div style={{flex:1,overflowY:"auto",padding:14}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}><div style={{width:10,height:10,borderRadius:"50%",background:C.g,boxShadow:"0 0 8px rgba(45,122,93,0.5)"}}/><div style={{fontSize:16,fontWeight:700,color:C.gold}}>OpenClaw Runtime</div></div>
-        <div style={{fontSize:11,color:C.tx2,lineHeight:1.6,marginBottom:16}}>Open-source AI agent runtime (100K+ GitHub stars, MIT). Runs on your machine. Agents have real computer access: terminal, browser, files, network. Every chat message routes through the gateway at localhost:18789.</div>
-        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Terminal Access</div>
-        <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd,marginBottom:12}}><div style={{fontSize:12,color:C.tx,lineHeight:1.7}}>Run any shell command:</div><div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:C.gold,marginTop:6,lineHeight:1.8}}>npm test / npm run build / npm audit<br/>python3 script.py / pip install<br/>git status / git diff / git commit<br/>docker ps / docker-compose up<br/>psql -U postgres -d dogma<br/>curl / wget / ssh</div></div>
-        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Browser Automation</div>
-        <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd,marginBottom:12}}><div style={{fontSize:12,color:C.tx,lineHeight:1.7}}>Chrome via CDP:</div><div style={{fontSize:11,color:C.tx2,marginTop:6,lineHeight:1.8}}>Navigate URLs, screenshots, extract content<br/>Fill forms, click buttons, submit data<br/>Scrape websites, read docs and papers<br/>Test web UIs end-to-end<br/>Download files, PDFs, datasets</div></div>
-        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>File System</div>
-        <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd,marginBottom:12}}><div style={{fontSize:12,color:C.tx,lineHeight:1.7}}>Full read/write access:</div><div style={{fontSize:11,color:C.tx2,marginTop:6,lineHeight:1.8}}>Read and edit source code (TS, Python, C++)<br/>Create files, modules, components<br/>Generate HTML/CSV/JSON/Markdown reports<br/>Write SQL migrations, Dockerfiles, CI configs</div></div>
-        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Architecture</div>
-        <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:12}}><div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>SOUL.md</div><div style={{fontSize:11,color:C.tx2}}>Agent identity as Markdown. Version-controllable.</div></div><div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>SKILL.md Modules</div><div style={{fontSize:11,color:C.tx2}}>5,400+ community skills on ClawHub.</div></div><div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>MEMORY.md</div><div style={{fontSize:11,color:C.tx2}}>Long-term memory. Remembers project, decisions, preferences.</div></div><div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>Sessions (JSONL)</div><div style={{fontSize:11,color:C.tx2}}>All conversations saved. Resume any time.</div></div></div>
-        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Security</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginBottom:12}}><div style={{padding:"8px 10px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:11,fontWeight:600,color:C.tx}}>Token Auth</div><div style={{fontSize:10,color:C.tx2}}>Bearer token for all calls</div></div><div style={{padding:"8px 10px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:11,fontWeight:600,color:C.tx}}>Loopback Only</div><div style={{fontSize:10,color:C.tx2}}>Binds to 127.0.0.1</div></div><div style={{padding:"8px 10px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:11,fontWeight:600,color:C.tx}}>Tool Allowlists</div><div style={{fontSize:10,color:C.tx2}}>Per-agent permitted tools</div></div><div style={{padding:"8px 10px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:11,fontWeight:600,color:C.tx}}>Approval Flow</div><div style={{fontSize:10,color:C.tx2}}>Human approval for sensitive ops</div></div><div style={{padding:"8px 10px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:11,fontWeight:600,color:C.tx}}>Audit Log</div><div style={{fontSize:10,color:C.tx2}}>Every execution logged</div></div><div style={{padding:"8px 10px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:11,fontWeight:600,color:C.tx}}>VirusTotal</div><div style={{fontSize:10,color:C.tx2}}>Skills scanned for malware</div></div></div>
-        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Multi-Channel</div>
-        <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd,marginBottom:12}}><div style={{fontSize:11,color:C.tx2,lineHeight:1.8}}>WhatsApp, Telegram, Slack, Discord, Signal, iMessage<br/>Google Chat, Teams, Matrix, IRC, LINE<br/>WebChat, macOS app, iOS/Android<br/>CLI: openclaw chat</div></div>
-        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Advanced</div>
-        <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:12}}><div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>Canvas (A2UI)</div><div style={{fontSize:11,color:C.tx2}}>Live interactive HTML workspace pushed by agent.</div></div><div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>Heartbeat</div><div style={{fontSize:11,color:C.tx2}}>Background daemon for proactive tasks on schedule.</div></div><div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>Model Agnostic</div><div style={{fontSize:11,color:C.tx2}}>Claude, GPT, Gemini, Llama, Ollama. Auto failover.</div></div><div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>Voice</div><div style={{fontSize:11,color:C.tx2}}>Wake words macOS/iOS. Continuous voice Android.</div></div><div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>Cron</div><div style={{fontSize:11,color:C.tx2}}>Schedule: tests hourly, deploy checks, weekly reports.</div></div></div>
-        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Agents</div>
-        <div style={{display:"flex",flexDirection:"column",gap:3,marginBottom:12}}>{AGENTS.map(function(a){return <div key={a.id} style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd,cursor:"pointer"}} onClick={function(){setAgentId(a.id);setMode("chat");}}><span style={{fontSize:15}}>{a.icon}</span><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:a.color}}>{a.name}</div><div style={{fontSize:10,color:C.tx2}}>{a.desc}</div></div><div style={{display:"flex",gap:2}}>{a.access&&a.access.shell&&<span style={{fontSize:7,padding:"1px 4px",borderRadius:2,background:C.gold+"10",color:C.gold}}>shell</span>}{a.access&&a.access.browser&&<span style={{fontSize:7,padding:"1px 4px",borderRadius:2,background:C.b+"10",color:C.b}}>browser</span>}{a.access&&a.access.files&&<span style={{fontSize:7,padding:"1px 4px",borderRadius:2,background:C.g+"10",color:C.g}}>files</span>}</div></div>;})}</div>
-        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Try it</div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:16}}>{["Run npm test","npm audit","Review auth code","Write status report","Research actuator papers","Plan sprint","Check Vercel deploy","Export tasks CSV","ISO 15066 gaps","Docker ROS 2"].map(function(a){return <div key={a} onClick={function(){setMode("chat");setInp(a);}} style={{padding:"5px 10px",fontSize:10,borderRadius:3,cursor:"pointer",background:C.bg3,color:C.tx2,border:"1px solid "+C.bd}}>{a}</div>;})}</div>
-        <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.gold+"20"}}><div style={{fontSize:11,color:C.tx2,lineHeight:1.6}}><span style={{color:C.gold,fontWeight:600}}>How it works:</span> Dashboard sends to Next.js API, which proxies server-side to OpenClaw at localhost:18789. Agent runs with full computer access. Gateway offline = Claude API fallback (text only).</div></div>
-      </div>}
 
       {/* ═══ TIMELINE MODE ═══ */}
       {mode==="timeline"&&<>
