@@ -1167,6 +1167,8 @@ var searchResults=useMemo(function(){
 var chatEnd=useRef(null);
 
 // Auth system
+var _mounted=useState(false),mounted=_mounted[0],setMounted=_mounted[1];
+useEffect(function(){setMounted(true);},[]);
 var _auth=useState(false),authed=_auth[0],setAuthed=_auth[1];
 var _showLogin=useState(false),showLogin=_showLogin[0],setShowLogin=_showLogin[1];
 var _userName=useState(""),userName=_userName[0],setUserName=_userName[1];
@@ -1208,7 +1210,7 @@ var doLogout=function(){
   setAuthed(false);setUserName("");setUserRole("viewer");
   try{localStorage.removeItem("dogma_session");}catch(e){}
 };
-var canEdit=authed;
+var canEdit=mounted&&authed;
 var canGen=true; // Everyone can generate documents
 
 // Generic field updater: updateField("ss","ss1","mat",85) or updateField("pilots","p1","viab",90)
