@@ -1023,6 +1023,8 @@ var AGENT_CATEGORIES=[
 ];
 
 export default function Dashboard(){
+var _mounted=useState(false),mounted=_mounted[0],setMounted=_mounted[1];
+useEffect(function(){setMounted(true);},[]);
 var _showSettings=useState(false),showSettings=_showSettings[0],setShowSettings=_showSettings[1];
 var _agentEditPolicy=useState('approval'),agentEditPolicy=_agentEditPolicy[0],setAgentEditPolicy=_agentEditPolicy[1];
 // Dynamic node tree (add/delete nodes at any level)
@@ -1167,8 +1169,6 @@ var searchResults=useMemo(function(){
 var chatEnd=useRef(null);
 
 // Auth system
-var _mounted=useState(false),mounted=_mounted[0],setMounted=_mounted[1];
-useEffect(function(){setMounted(true);},[]);
 var _auth=useState(false),authed=_auth[0],setAuthed=_auth[1];
 var _showLogin=useState(false),showLogin=_showLogin[0],setShowLogin=_showLogin[1];
 var _userName=useState(""),userName=_userName[0],setUserName=_userName[1];
@@ -1667,14 +1667,21 @@ var sendAgent=function(){if(!inp.trim()||ld)return;var userTxt=inp.trim();setInp
 var pageTitle="";var pageContent=null;
 if(sel){
   if(sel.level==="main"){pageTitle=sel.id.toUpperCase();pageContent=<MainPage nid={sel.id} D={D} files={files} onUpload={onUpload} onRemove={onRemove} acts={acts}/>;}
-  else if(sel.level==="sub"){var sn=allSubs.find(function(s){return s.id===sel.id;});if(sn){pageTitle=sn.label;pageContent=<SubPage sub={sn} D={D} acts={acts} files={files} onUpload={onUpload} onRemove={onRemove}/>;}}
-  else if(sel.level==="ssub"){var ssn2=allSSubs.find(function(s){return s.id===sel.id;});if(ssn2){pageTitle=ssn2.label;pageContent=<LeafPage leaf={ssn2} acts={acts}/>;}}
+  else if(sel.level==="sub"){
+    var sn=allSubs.find(function(s){return s.id===sel.id;});
+    if(sn){pageTitle=sn.label;pageContent=<SubPage sub={sn} D={D} acts={acts} files={files} onUpload={onUpload} onRemove={onRemove}/>;}
+    else{/* NODE_TREE sub-node — render via MainPage catch-all */pageTitle=sel.id;pageContent=<MainPage nid={sel.id} D={D} files={files} onUpload={onUpload} onRemove={onRemove} acts={acts}/>;}
+  }
+  else if(sel.level==="ssub"){
+    var ssn2=allSSubs.find(function(s){return s.id===sel.id;});
+    if(ssn2){pageTitle=ssn2.label;pageContent=<LeafPage leaf={ssn2} acts={acts}/>;}
+    else{/* NODE_TREE sub-sub-node — render via MainPage catch-all */pageTitle=sel.id;pageContent=<MainPage nid={sel.id} D={D} files={files} onUpload={onUpload} onRemove={onRemove} acts={acts}/>;}
+  }
 }
 
-// Don't render full dashboard until client mount to prevent hydration mismatches
-if(!mounted)return(<div style={{width:"100vw",height:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Instrument Sans',sans-serif"}}><div style={{textAlign:"center"}}><div style={{width:40,height:40,background:C.gold,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}><span style={{color:C.bg,fontWeight:900,fontSize:20,fontFamily:"monospace"}}>D</span></div><div style={{color:C.gold,fontSize:16,fontWeight:700}}>DOGMA OS</div><div style={{color:C.tx3,fontSize:12,marginTop:4}}>Loading...</div></div></div>);
-
-return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.bg,display:"flex",flexDirection:"column",fontFamily:"'Instrument Sans',sans-serif",color:C.tx}}>
+return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.bg,display:"flex",flexDirection:"column",fontFamily:"'Instrument Sans',sans-serif",color:C.tx}}>
+  {/* Loading overlay until mounted */}
+  {!mounted&&<div style={{position:"fixed",inset:0,zIndex:9999,background:C.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{textAlign:"center"}}><div style={{width:40,height:40,background:C.gold,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}><span style={{color:C.bg,fontWeight:900,fontSize:20,fontFamily:"monospace"}}>D</span></div><div style={{color:C.gold,fontSize:16,fontWeight:700}}>DOGMA OS</div><div style={{color:C.tx3,fontSize:12,marginTop:4}}>Loading...</div></div></div>}
   {/* Create Form Modal */}
   {showCreate&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.7)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center"}} onMouseDown={function(e){if(e.target===e.currentTarget){setShowCreate(null);setCreateForm({});}}}>
     <div style={{background:C.bg1,border:"1px solid "+C.gold+"40",borderRadius:8,padding:24,width:420,maxHeight:"80vh",overflowY:"auto"}} onMouseDown={function(e){e.stopPropagation();}}>
