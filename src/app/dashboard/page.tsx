@@ -2024,65 +2024,34 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
         <div onClick={function(){setMode("approvals");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="approvals"?C.gold:C.tx3,borderBottom:mode==="approvals"?"2px solid "+C.gold:"2px solid transparent",background:mode==="approvals"?C.gold+"08":"transparent"}}>{pendingMuts.length>0?"⚠️":"✅"} Queue{pendingMuts.length>0?" ("+pendingMuts.length+")":""}</div>
       </div>
 
-      {/* ═══ CONTROL MODE ═══ */}
-      {mode==="control"&&<>
-      <div style={{padding:"8px 10px",borderBottom:"1px solid "+C.bd,display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
-        <div style={{width:8,height:8,borderRadius:"50%",background:oc.gateway.connected?C.g:C.r,boxShadow:oc.gateway.connected?"0 0 6px rgba(45,122,93,0.5)":"none"}}/>
-        <span style={{fontSize:12,fontWeight:600,color:oc.gateway.connected?C.g:C.r}}>{oc.gateway.connected?"OpenClaw Connected":"Cloud Mode"}</span>
-        <div style={{flex:1}}/>
-        <span style={{fontSize:9,color:C.tx3,fontFamily:"'JetBrains Mono',monospace"}}>{oc.gateway.connected?"localhost:18789":"Anthropic API"}</span>
-      </div>
-      <div style={{padding:"6px 8px",borderBottom:"1px solid "+C.bd,flexShrink:0,maxHeight:160,overflowY:"auto"}}>
-        {AGENT_CATEGORIES.map(function(cat){var catAgents=AGENTS.filter(function(a){return a.cat===cat.id;});return <div key={cat.id} style={{marginBottom:4}}>
-          <div style={{fontSize:9,color:cat.color,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700,marginBottom:2}}>{cat.label}</div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:2}}>
-          {catAgents.map(function(ag){var isA=agentId===ag.id;return <div key={ag.id} onClick={function(){setAgentId(ag.id);}} title={ag.desc} style={{display:"flex",alignItems:"center",gap:2,padding:"3px 6px",borderRadius:3,cursor:"pointer",background:isA?ag.color+"15":"transparent",border:"1px solid "+(isA?ag.color+"30":C.bd+"50"),transition:"all 0.15s"}}><span style={{fontSize:11}}>{ag.icon}</span><span style={{fontSize:9,fontWeight:600,color:isA?ag.color:C.tx3}}>{ag.name}</span></div>;})}
+      {/* ═══ CONTROL MODE — Full OpenClaw Dashboard ═══ */}
+      {mode==="control"&&<div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        <div style={{padding:"6px 10px",display:"flex",alignItems:"center",gap:6,flexShrink:0,borderBottom:"1px solid "+C.bd+"40"}}>
+          <div style={{width:8,height:8,borderRadius:"50%",background:oc.gateway.connected?C.g:C.r,boxShadow:oc.gateway.connected?"0 0 6px rgba(45,122,93,0.5)":"none"}}/>
+          <span style={{fontSize:11,fontWeight:600,color:oc.gateway.connected?C.g:C.r}}>{oc.gateway.connected?"Connected":"Offline"}</span>
+          <span style={{fontSize:9,color:C.tx3,fontFamily:"'JetBrains Mono',monospace"}}>localhost:18789</span>
+          <div style={{flex:1}}/>
+          <span onClick={function(){window.open("http://localhost:18789","_blank");}} style={{fontSize:9,color:C.gold,cursor:"pointer",padding:"2px 6px",border:"1px solid "+C.gold+"30",borderRadius:3}}>↗ New tab</span>
+          <span onClick={function(){oc.checkGateway();}} style={{fontSize:9,color:C.tx3,cursor:"pointer",padding:"2px 6px",border:"1px solid "+C.bd,borderRadius:3}}>Retry</span>
+        </div>
+        {oc.gateway.connected?
+          <iframe src="http://localhost:18789" style={{flex:1,border:"none",width:"100%",background:C.bg}} allow="clipboard-read; clipboard-write"/>
+          :<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+            <div style={{textAlign:"center",maxWidth:300}}>
+              <div style={{fontSize:48,marginBottom:12}}>🦞</div>
+              <div style={{fontSize:18,fontWeight:700,color:C.gold,marginBottom:8}}>OpenClaw Gateway Offline</div>
+              <div style={{fontSize:12,color:C.tx2,lineHeight:1.6,marginBottom:16}}>Start the gateway to access the full OpenClaw dashboard — agents, sessions, memory, skills, browser, and tools.</div>
+              <div style={{padding:"12px 16px",background:C.bg,borderRadius:6,border:"1px solid "+C.bd,fontSize:12,color:C.tx,fontFamily:"'JetBrains Mono',monospace",lineHeight:2,textAlign:"left"}}>
+                <div><span style={{color:C.gold}}>1.</span> npm i -g openclaw@latest</div>
+                <div><span style={{color:C.gold}}>2.</span> openclaw setup</div>
+                <div><span style={{color:C.gold}}>3.</span> openclaw gateway run</div>
+              </div>
+              <div style={{fontSize:10,color:C.tx3,marginTop:12}}>Dashboard appears here automatically when connected</div>
+              <div onClick={function(){oc.checkGateway();}} style={{marginTop:16,fontSize:12,color:C.gold,cursor:"pointer",padding:"8px 20px",border:"1px solid "+C.gold+"40",borderRadius:6,display:"inline-block",fontWeight:600}}>🔄 Retry Connection</div>
+            </div>
           </div>
-        </div>;})}
-      </div>
-      <div style={{padding:"8px 10px",borderBottom:"1px solid "+C.bd,flexShrink:0}}>
-        <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{fontSize:13,fontWeight:700,color:curAgent.color}}>{curAgent.icon} {curAgent.name}</div><div style={{display:"flex",alignItems:"center",gap:4,padding:"2px 8px",borderRadius:3,fontSize:9,fontWeight:700,background:oc.gateway.connected?"rgba(45,122,93,0.1)":"rgba(138,51,51,0.1)",color:oc.gateway.connected?"#2D7A5D":"#8A3333",border:"1px solid "+(oc.gateway.connected?"rgba(45,122,93,0.25)":"rgba(138,51,51,0.25)")}}><span style={{width:5,height:5,borderRadius:"50%",background:oc.gateway.connected?"#2D7A5D":"#8A3333"}}/>{oc.gateway.connected?"OpenClaw":"Cloud"}</div></div>
-        <div style={{fontSize:11,color:C.tx2,lineHeight:1.4,marginTop:2}}>{curAgent.desc}</div>
-        {mcpConn.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:3,marginTop:4}}>{mcpConn.map(function(s,i){return <span key={i} style={{fontSize:9,padding:"2px 6px",borderRadius:3,background:C.g+"15",color:C.g,border:"1px solid "+C.g+"30",fontWeight:600}}>🔗 {s}</span>;})}</div>}
-      </div>
-      <div style={{flex:1,overflowY:"auto",padding:10,display:"flex",flexDirection:"column",gap:4}}>
-        {curMsgs.length===0&&<div style={{fontSize:13,color:C.tx3,textAlign:"center",padding:20}}>Ask {curAgent.name}<br/><span style={{fontSize:11}}>Single agent — direct conversation</span></div>}
-        {curMsgs.map(function(msg,i){return <div key={i} style={{maxWidth:"90%",alignSelf:msg.role==="user"?"flex-end":"flex-start"}}><div style={{padding:"6px 10px",borderRadius:6,background:msg.role==="user"?C.bg3:C.bg2,borderLeft:msg.role==="ai"?"2px solid "+(msg.via==="openclaw"?"#2D7A5D":curAgent.color):"none",fontSize:13,color:C.tx,lineHeight:1.5,whiteSpace:"pre-wrap"}}><MsgText text={msg.text}/></div>{msg.thinking&&showThinking&&<div style={{padding:"6px 10px",borderRadius:6,background:C.bg3,borderLeft:"2px solid "+C.a,fontSize:11,color:C.tx3,lineHeight:1.5,whiteSpace:"pre-wrap",marginTop:3,maxHeight:200,overflowY:"auto"}}><div style={{fontSize:9,color:C.a,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700,marginBottom:4}}>Claude thinking</div>{msg.thinking}</div>}{msg.files&&msg.files.length>0&&msg.files.map(function(f,j){var isH=f.name&&f.name.endsWith(".html");return <div key={j} style={{marginTop:3}}>
-<div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 8px",background:C.bg,border:"1px solid "+C.gold+"30",borderRadius:4,cursor:"pointer"}}>
-<span style={{fontSize:16}}>{f.icon||"\uD83D\uDCC1"}</span>
-<div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>{f.name}</div></div>
-{isH&&f.url&&<span onClick={function(e){e.stopPropagation();window.open(f.url,"_blank");}} style={{fontSize:9,color:C.gold,padding:"2px 6px",border:"1px solid "+C.gold+"25",borderRadius:3,cursor:"pointer"}}>Preview</span>}
-<span onClick={function(){if(f.url&&f.url!=="#"){var dl=document.createElement("a");dl.href=f.url;dl.download=f.name||"file";document.body.appendChild(dl);dl.click();document.body.removeChild(dl);}}} style={{color:C.gold,cursor:"pointer"}}>{"\u2B07"}</span>
-</div></div>;})}</div>;})}
-        {ld&&<div style={{fontSize:12,color:curAgent.color,fontStyle:"italic",padding:4}}>{curAgent.name} working...</div>}
-        {streamingMsg&&streamingMsg.agentId===agentId&&<div style={{maxWidth:"90%",alignSelf:"flex-start"}}>
-          {showThinking&&streamingMsg.thinking&&<div style={{padding:"6px 10px",borderRadius:6,background:C.bg3,borderLeft:"2px solid "+C.a,fontSize:12,color:C.tx3,lineHeight:1.5,whiteSpace:"pre-wrap",marginBottom:4,maxHeight:200,overflowY:"auto"}}><div style={{fontSize:9,color:C.a,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700,marginBottom:4}}>Thinking...</div>{streamingMsg.thinking}</div>}
-          {streamingMsg.text&&<TypeWriter text={streamingMsg.text} color={curAgent.color}/>}
-        </div>}
-        <div ref={chatEnd}/>
-      </div>
-      <div style={{padding:"4px 10px",borderTop:"1px solid "+C.bd,display:"flex",gap:6,alignItems:"center",flexShrink:0}}><div onClick={function(){setShowThinking(function(v){return !v;});}} style={{fontSize:9,padding:"2px 8px",borderRadius:3,cursor:"pointer",background:showThinking?C.gold+"15":"transparent",color:showThinking?C.gold:C.tx3,border:"1px solid "+(showThinking?C.gold+"30":C.bd),userSelect:"none"}}>{showThinking?"Thinking ON":"Thinking"}</div></div>
-      <div style={{padding:"8px 10px",borderTop:"1px solid "+C.bd,display:"flex",gap:4,flexShrink:0}}>
-        <input value={inp} onChange={function(e){setInp(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")sendAgent();}} placeholder={"Ask "+curAgent.name+"..."} style={{flex:1,padding:"6px 10px",fontSize:13,background:C.bg,border:"1px solid "+C.bd,borderRadius:3,color:C.tx,outline:"none"}}/>
-        <Btn v="gold" onClick={sendAgent}>{"\u2191"}</Btn>
-      </div>
-      {/* Approval Queue */}
-      {pendingMuts.length>0&&<div style={{borderTop:"1px solid "+C.bd,padding:"6px 10px",maxHeight:120,overflowY:"auto",flexShrink:0}}>
-        <div style={{fontSize:9,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:4}}>Pending Mutations ({pendingMuts.length})</div>
-        {pendingMuts.map(function(m,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:4,padding:"3px 0",fontSize:11,borderBottom:"1px solid "+C.bd+"30"}}>
-          <span style={{color:C.a}}>{m.type}</span>
-          <span style={{flex:1,color:C.tx2}}>{m.entity_type}/{(m.entity_id||"").slice(0,8)}</span>
-          {m.field&&<span style={{color:C.tx3}}>{m.field}→{String(m.value).slice(0,12)}</span>}
-          <span onClick={function(){
-            // Approve: re-send mutation via API
-            fetch("/api/commands",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({command:m.type,input:m})}).then(function(){
-              setPendingMuts(function(p){return p.filter(function(_,j){return j!==i;});});
-            });
-          }} style={{cursor:"pointer",color:C.g,fontWeight:600,fontSize:10}}>✓</span>
-          <span onClick={function(){setPendingMuts(function(p){return p.filter(function(_,j){return j!==i;});});}} style={{cursor:"pointer",color:C.r,fontSize:10}}>✕</span>
-        </div>;})}
+        }
       </div>}
-      </>}
 
       {/* ═══ SWARM MODE ═══ */}
       {false&&<>
