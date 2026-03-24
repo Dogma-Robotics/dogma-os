@@ -1714,76 +1714,60 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
 
   {/* Main area — Sidebar + 3D/Page + Chat right */}
   <div style={{flex:1,display:"flex",overflow:"hidden",position:"relative"}}>
-    {/* Left Sidebar — 3-level node tree */}
-    <div style={{width:200,minWidth:200,background:C.bg1,borderRight:"1px solid "+C.bd,overflowY:"auto",flexShrink:0,fontSize:12}}>
+    {/* Left Sidebar — NODE_TREE driven */}
+    <div style={{width:220,minWidth:220,background:C.bg1,borderRight:"1px solid "+C.bd,overflowY:"auto",flexShrink:0,fontSize:12}}>
       {/* COMMAND node */}
       <div onClick={function(){focusNode([0,0,0],24);setSel({level:"main",id:"command"});}} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",cursor:"pointer",borderBottom:"1px solid "+C.bd+"40",background:sel&&sel.id==="command"?C.gold+"12":"transparent"}} onMouseEnter={function(e){e.currentTarget.style.background=C.bg3;}} onMouseLeave={function(e){e.currentTarget.style.background=sel&&sel.id==="command"?C.gold+"12":"transparent";}}>
         <div style={{width:10,height:10,borderRadius:"50%",background:"#C8A74B",flexShrink:0}}/>
-        <span style={{fontWeight:700,color:C.gold,fontSize:13}}>COMMAND</span>
+        <span style={{fontWeight:700,color:C.gold,fontSize:13}}>DOGMA COMMAND</span>
       </div>
-      {/* Main nodes grouped */}
-      {[
-        {group:"Engineering",icon:"🔬",ids:["rd","experiments","fleet"]},
-        {group:"Operations",icon:"⚙️",ids:["incidents","team","roadmap"]},
-        {group:"Business",icon:"💼",ids:["pilots","fundraising","finance"]},
-      ].map(function(grp){return <div key={grp.group}>
-        <div style={{padding:"6px 10px",fontSize:9,color:C.tx3,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,background:C.bg+"80",borderBottom:"1px solid "+C.bd+"30"}}>{grp.icon} {grp.group}</div>
-        {grp.ids.map(function(nid){
-          var nd=NODES.find(function(n){return n.id===nid;});if(!nd)return null;
-          var isExp=!!xp[nid];var isSel=sel&&sel.id===nid;
-          var subs=isExp?getSubs(nid,D):[];
-          return <div key={nid}>
-            <div onClick={function(){
-              var mn=NODES.find(function(n){return n.id===nid;});
-              if(mn)focusNode(mn.pos,14);
-              setXp(function(p){var n=Object.assign({},p);n[nid]=!p[nid];return n;});
-            }} onDoubleClick={function(){setSel({level:"main",id:nid});}} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 10px 5px 16px",cursor:"pointer",background:isSel?("rgba("+((nd.color>>16)&255)+","+(((nd.color>>8)&255))+","+(nd.color&255)+",0.1)"):"transparent",borderLeft:isSel?"2px solid #"+nd.color.toString(16).padStart(6,"0"):"2px solid transparent"}} onMouseEnter={function(e){if(!isSel)e.currentTarget.style.background=C.bg3;}} onMouseLeave={function(e){if(!isSel)e.currentTarget.style.background="transparent";}}>
-              <span style={{fontSize:10,color:C.tx3}}>{isExp?"▼":"▶"}</span>
-              <div style={{width:7,height:7,borderRadius:"50%",background:"#"+nd.color.toString(16).padStart(6,"0"),flexShrink:0}}/>
-              <span style={{flex:1,color:C.tx,fontWeight:500}}>{nd.label}</span>
-              {canEdit&&<span onClick={function(e){e.stopPropagation();
-                var typeMap={rd:"ss",experiments:"exps",fleet:"fleet",incidents:"incidents",team:"tasks",pilots:"pilots",fundraising:"investors",finance:"supply",roadmap:"milestones"};
-                var t=typeMap[nid];if(t)setShowCreate({type:t});
-              }} style={{cursor:"pointer",color:C.gold,fontSize:11,opacity:0.5,padding:"0 2px"}} title="Add new">+</span>}
-            </div>
-            {/* Level 2: Sub-nodes */}
-            {isExp&&subs.map(function(sub){
-              var isSubSel=sel&&sel.id===sub.id;
-              var isSubExp=!!xp2[sub.id];
-              var ssubs=isSubExp?getSSubs(sub):[];
-              return <div key={sub.id}>
-                <div onClick={function(){
-                  focusNode(sub.pos,8);
-                  setXp2(function(p){var n=Object.assign({},p);n[sub.id]=!p[sub.id];return n;});
-                }} onDoubleClick={function(){setSel({level:"sub",id:sub.id});}} style={{display:"flex",alignItems:"center",gap:4,padding:"3px 10px 3px 28px",cursor:"pointer",fontSize:11,background:isSubSel?sub.color+"12":"transparent",borderLeft:isSubSel?"2px solid "+sub.color:"2px solid transparent"}} onMouseEnter={function(e){if(!isSubSel)e.currentTarget.style.background=C.bg3;}} onMouseLeave={function(e){if(!isSubSel)e.currentTarget.style.background="transparent";}}>
-                  {ssubs.length>0||getSSubs(sub).length>0?<span style={{fontSize:8,color:C.tx3}}>{isSubExp?"▼":"▶"}</span>:<span style={{width:8}}/>}
-                  <div style={{width:5,height:5,borderRadius:"50%",background:sub.color,flexShrink:0}}/>
-                  <span style={{flex:1,color:C.tx2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{sub.label}</span>
-                  {sub.metric&&<span style={{fontSize:9,color:sub.color,fontFamily:"'JetBrains Mono',monospace",flexShrink:0}}>{sub.metric}</span>}
-                  {canEdit&&<span onClick={function(e){e.stopPropagation();
-                    var fieldMap={ss:"d",skill:"gaps",exp:"p",inc:"acts",pilot:"qs",inv:"tp",task:"sb",fl:"sys",ms:"cr",safe:"gaps",sply:"note",fmet:"d"};
-                    var field=fieldMap[sub.type]||"d";
-                    var txt=prompt("Add item to "+sub.label+":");
-                    if(txt&&txt.trim()){
-                      var colMap2={ss:"ss",skill:"skills",exp:"exps",inc:"incidents",pilot:"pilots",inv:"investors",task:"tasks",fl:"fleet",ms:"milestones",safe:"safety",sply:"supply"};
-                      var col2=colMap2[sub.type]||"";
-                      if(col2)addSubItem(col2,sub.data.id,field,txt);
-                    }
-                  }} style={{cursor:"pointer",color:C.gold,fontSize:9,opacity:0.4,padding:"0 2px"}} title="Add detail">+</span>}
-                </div>
-                {/* Level 3: Sub-sub-nodes */}
-                {isSubExp&&ssubs.slice(0,12).map(function(ssub){
-                  return <div key={ssub.id} onClick={function(){focusNode(ssub.pos,5);setSel({level:"ssub",id:ssub.id});}} style={{display:"flex",alignItems:"center",gap:4,padding:"2px 10px 2px 42px",cursor:"pointer",fontSize:10,color:C.tx3}} onMouseEnter={function(e){e.currentTarget.style.background=C.bg3;e.currentTarget.style.color=C.tx;}} onMouseLeave={function(e){e.currentTarget.style.background="transparent";e.currentTarget.style.color=C.tx3;}}>
-                    <div style={{width:3,height:3,borderRadius:"50%",background:C.tx3,flexShrink:0}}/>
-                    <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{ssub.label}</span>
-                  </div>;
-                })}
-                {isSubExp&&getSSubs(sub).length>12&&<div style={{padding:"2px 10px 2px 42px",fontSize:9,color:C.tx3,fontStyle:"italic"}}>+{getSSubs(sub).length-12} more</div>}
-              </div>;
-            })}
-          </div>;
-        })}
-      </div>;})}
+      {/* NODE_TREE groups */}
+      {NODE_TREE.map(function(group){
+        var isGrpExp=!!xp[group.id];
+        return <div key={group.id}>
+          <div onClick={function(){setXp(function(p){var n=Object.assign({},p);n[group.id]=!p[group.id];return n;});}} style={{padding:"6px 10px",fontSize:9,color:C.tx3,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,background:C.bg+"80",borderBottom:"1px solid "+C.bd+"30",cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+            <span style={{fontSize:8}}>{isGrpExp?"▼":"▶"}</span>
+            <span>{group.icon} {group.label}</span>
+          </div>
+          {isGrpExp&&group.children.map(function(node){
+            var isSel=sel&&sel.id===node.id;
+            var isNodeExp=!!xp[node.id];
+            return <div key={node.id}>
+              <div onClick={function(){
+                if(node.children&&node.children.length>0){setXp(function(p){var n=Object.assign({},p);n[node.id]=!p[node.id];return n;});}
+                setSel({level:"main",id:node.id});
+              }} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px 5px 16px",cursor:"pointer",background:isSel?C.gold+"12":"transparent",borderLeft:isSel?"2px solid "+C.gold:"2px solid transparent"}} onMouseEnter={function(e){if(!isSel)e.currentTarget.style.background=C.bg3;}} onMouseLeave={function(e){if(!isSel)e.currentTarget.style.background="transparent";}}>
+                {node.children&&node.children.length>0?<span style={{fontSize:8,color:C.tx3}}>{isNodeExp?"▼":"▶"}</span>:<span style={{width:8}}/>}
+                <span style={{fontSize:11}}>{node.icon}</span>
+                <span style={{flex:1,color:isSel?C.gold:C.tx,fontWeight:isSel?600:400,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontSize:11}}>{node.label}</span>
+              </div>
+              {/* L2 children */}
+              {isNodeExp&&node.children&&node.children.map(function(child){
+                var isChildSel=sel&&sel.id===child.id;
+                var isChildExp=!!xp2[child.id];
+                return <div key={child.id}>
+                  <div onClick={function(){
+                    if(child.children&&child.children.length>0){setXp2(function(p){var n=Object.assign({},p);n[child.id]=!p[child.id];return n;});}
+                    setSel({level:"sub",id:child.id});
+                  }} style={{display:"flex",alignItems:"center",gap:4,padding:"3px 10px 3px 30px",cursor:"pointer",fontSize:10,background:isChildSel?C.gold+"08":"transparent",borderLeft:isChildSel?"2px solid "+C.gold:"2px solid transparent"}} onMouseEnter={function(e){if(!isChildSel)e.currentTarget.style.background=C.bg3;}} onMouseLeave={function(e){if(!isChildSel)e.currentTarget.style.background="transparent";}}>
+                    {child.children&&child.children.length>0?<span style={{fontSize:7,color:C.tx3}}>{isChildExp?"▼":"▶"}</span>:<span style={{width:7}}/>}
+                    <span style={{fontSize:10}}>{child.icon}</span>
+                    <span style={{flex:1,color:isChildSel?C.gold:C.tx2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{child.label}</span>
+                  </div>
+                  {/* L3 grandchildren */}
+                  {isChildExp&&child.children&&child.children.map(function(gc){
+                    var isGcSel=sel&&sel.id===gc.id;
+                    return <div key={gc.id} onClick={function(){setSel({level:"ssub",id:gc.id});}} style={{display:"flex",alignItems:"center",gap:4,padding:"2px 10px 2px 46px",cursor:"pointer",fontSize:9,color:isGcSel?C.gold:C.tx3}} onMouseEnter={function(e){e.currentTarget.style.background=C.bg3;e.currentTarget.style.color=C.tx;}} onMouseLeave={function(e){e.currentTarget.style.background="transparent";e.currentTarget.style.color=isGcSel?C.gold:C.tx3;}}>
+                      <div style={{width:3,height:3,borderRadius:"50%",background:isGcSel?C.gold:C.tx3,flexShrink:0}}/>
+                      <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{gc.label}</span>
+                    </div>;
+                  })}
+                </div>;
+              })}
+            </div>;
+          })}
+        </div>;
+      })}
     </div>
 
     {/* Center: 3D always visible + Page overlay */}
