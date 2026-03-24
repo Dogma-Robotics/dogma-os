@@ -1,0 +1,185 @@
+Quiero que actúes como una combinación de:
+
+1. Arquitecto principal de conocimiento
+2. Diseñador de ontologías y taxonomías
+3. Analista principal de I+D en robótica humanoide
+4. Documentalista técnico-estratégico
+5. Diseñador de bases de datos jerárquicas y grafos de conocimiento
+6. Editor de marca y narrativa conceptual de alto nivel
+7. Arquitecto de control y sistemas en tiempo real
+8. Ingeniero de software robótico y sistemas cognitivo-robóticos
+9. Diseñador de sistemas documentales para plataformas escalables
+10. Arquitecto de producto digital para HMIs / control consoles industriales
+
+Tu tarea es construir una BASE DE DATOS MAESTRA, PROFUNDA, EXHAUSTIVA, NORMALIZADA Y ESTRICTAMENTE ORGANIZADA para el proyecto DOGMA, usando únicamente el corpus que te doy a continuación.
+
+No quiero un simple resumen.
+No quiero una lista superficial.
+No quiero una nota de investigación.
+No quiero un documento "bonito" pero flojo.
+Quiero una arquitectura de información completa, profesional, escalable y útil en el mundo real, pensada como si fuera a convertirse en:
+
+- el repositorio central de DOGMA,
+- la ontología fundacional de la empresa,
+- la base documental de ingeniería, branding y producto,
+- el knowledge graph interno,
+- la estructura madre para Notion, Obsidian, Airtable, Neo4j, una wiki privada o una base de conocimiento empresarial.
+
+La estructura obligatoria debe estar organizada por:
+
+- NODO
+- SUBNODO
+- SUB-SUBNODO
+
+y cada elemento debe existir como una unidad de conocimiento trazable, con jerarquía, relaciones, aliases, estatus, nivel de certeza, dependencias y contexto.
+
+==================================================
+OBJETIVO CENTRAL
+==================================================
+
+Construye una base de datos integral sobre DOGMA que capture de manera organizada, jerárquica, relacional y profesional:
+
+- identidad del proyecto
+- filosofía y marco conceptual
+- naming y semántica
+- arquitectura de producto
+- especificaciones técnicas
+- componentes mecánicos y sensoriales
+- arquitectura de control
+- estimación de estado
+- seguridad y reflejos
+- gemelo digital y dinámica
+- software en tiempo real
+- aplicación / interfaz con la que se controla la mano
+- HMI / Control OS / consola operativa
+- planners, skills, runs y automatización
+- teaching / glove teleoperation
+- dataset, simulación y sim-to-real
+- pricing y estructura de costos
+- posicionamiento competitivo
+- mercado y clientes
+- narrativa y branding
+- documentación interna
+- roadmap y versiones
+- hipótesis, vacíos y preguntas abiertas
+- riesgos, claims y conflictos documentales
+- todo dato cuantitativo, cualitativo, técnico, simbólico o estratégico relevante
+
+La base debe estar diseñada de forma que pueda crecer sin romperse.
+Debe ser modular, escalable, versionable, legible y fácil de migrar a cualquier sistema.
+
+==================================================
+REGLAS NO NEGOCIABLES
+==================================================
+
+1. NO INVENTES DATOS. Usa únicamente la información del corpus. Si algo no está explícitamente confirmado, márcalo como: inferido, estimado, candidato, hipótesis, pendiente de validación, aspiracional, documentado pero no validado.
+
+2. SEPARA CON ABSOLUTA CLARIDAD: hechos confirmados, claims internos, estimaciones, benchmarks conversacionales, naming candidato, visión futura / roadmap, narrativa conceptual, lenguaje de marca, arquitectura teórica, arquitectura propuesta, arquitectura implementada, arquitectura validada.
+
+3. NO APLASTES LA COMPLEJIDAD DE DOGMA. DOGMA tiene dimensión filosófica, científica, estética, narrativa, ingenieril, comercial, documental, de control, computacional, cognitiva, operativa y de producto digital.
+
+4. CONSERVA EL DOBLE EJE DE DOGMA: eje técnico/robótico y eje conceptual/filosófico.
+
+5. TODA ENTRADA DEBE TENER TRAZABILIDAD.
+
+6. EVITA DUPLICADOS. Unifica bajo nombre canónico y conserva aliases.
+
+7-10. [Ver corpus completo para reglas detalladas]
+
+==================================================
+CONTEXTO BASE CONSOLIDADO SOBRE DOGMA
+==================================================
+
+[IDENTIDAD GENERAL]
+DOGMA es un proyecto centrado en manos humanoides biomiméticas, musculoesqueléticas y sensadas. Réplica humana 1:1. Doble naturaleza técnica y filosófica.
+
+[FILOSOFÍA Y TESIS]
+Lógica: músculo -> hueso -> movimiento -> acción. Acto creador, origen, génesis. Integra ciencia, arte, filosofía y narrativa bíblica/simbólica con tono sobrio y académico.
+
+[MARCA / NAMING]
+Sistema de doble naming: nombre conceptual + descriptor técnico. Ejemplos: DOGMA Genesis — Facsimile Humanum, DOGMA Dextera — Biomimetic Hand V1, DOGMA Ruach — Actuated Hand System. Nombres conceptuales: Dextera, Genesis, Ruach, Logos, Adama, Manus Dei. Raíces latinas, griegas, bíblicas.
+
+[ARQUITECTURA MODULAR]
+mano -> muñeca -> brazo -> humanoide completo. Versiones V1, V2. Aplicaciones: industria, medicina, investigación, prótesis, ensamblaje fino.
+
+[ESPECIFICACIONES TÉCNICAS]
+Brazo: 6 DOF, totalmente actuado, alcance 1m, carga 15kg. Mano: 20 DOF independientes, 14 sensores táctiles, diseño anatómicamente preciso, real-time force feedback.
+
+[PRECIO / COSTOS]
+Brazo-mano: $5,000 USD. Humanoide completo: $18,000 USD. Desglose: brazos/manos 28%, piernas 33%, torso 22%, cabeza 10%, otros 7%. Status: estimación conversada.
+
+[POSICIONAMIENTO]
+Comparaciones con: Shadow Hand, OpenAI Dactyl, JSK Lab, UBTech Walker S2, Unitree G1, Tesla Optimus, Agility Digit, Ameca, NAO, Atlas. Status: benchmarks conversacionales.
+
+[ARQUITECTURA DE CONTROL M0-M9]
+M0 Safety (1-5kHz), M1 Pressure Servo (500-1000Hz), M2 Tendon Force/Impedance (200-500Hz), M3 Proprioception (100-300Hz), M4 Vision (30Hz), M5 Fusion (60-120Hz), M6 Reflex (100-300Hz), M7 Policy (10-30Hz), M8 Language/Skills (0.5-5Hz), M9 Meta-Supervisor (0.1-1Hz).
+
+Control primario por fuerzas/tensiones de tendones, NO por ángulos articulares. McKibben a 4 bar. No hay encoders articulares. Relación músculo-tendón 1:1.
+
+[BUSES DE SEÑAL]
+BUS SENSORS, BUS STATE, BUS LIMITS, BUS COMMANDS. Variables: p, |F|, x_tac, theta_hat, omega_hat, c_hat, T_obj_hat, w_hat, p*, F*, K*, D*, SkillCmd, meta-actions.
+
+[APLICACIÓN DE CONTROL / HMI]
+DOGMA Robotics Control OS v1.0. React + RosBridge WebSocket. Modos: Operator, Engineer, Admin. Páginas: Command Center, Live View, Manual Control, AI Planner, Arm Planner, Skills Library, Run Builder, Teleop Mode, Calibration Lab, Data & Replay, Safety & Diagnostics, Settings, Integrations.
+
+[SKILLS/RUNS]
+Jerarquía: sub-skill -> skill -> run. Categorías: Arm, Grasp, Manipulation, Assembly, Sensing, Interaction, Utility. Teaching por glove/haptic teleoperation.
+
+[INTEGRACIONES]
+SAP S/4HANA, MES/SCADA, ROS 2 Ecosystem, Cloud/Analytics.
+
+==================================================
+ENTREGABLES REQUERIDOS (12 secciones)
+==================================================
+
+1. RESUMEN ESTRUCTURAL DE LA ARQUITECTURA
+2. MAPA MAESTRO JERÁRQUICO (34 nodos de primer nivel)
+3. TABLA MAESTRA DE NODOS
+4. DESARROLLO DETALLADO POR NODO
+5. MAPA DE RELACIONES (knowledge graph)
+6. DATOS FALTANTES Y PENDIENTES
+7. RECOMENDACIÓN DE EVOLUCIÓN
+8. MATRIZ DE MÓDULOS DE CONTROL M0-M9
+9. MAPA DE BUSES Y CONTRATOS DE SEÑAL
+10. MAPA DE CONFLICTOS Y AMBIGÜEDADES DE VERSIÓN
+11. SECUENCIA DE IMPLEMENTACIÓN TÉCNICA
+12. MODELO DOCUMENTAL DE LA APLICACIÓN DE CONTROL
+
+==================================================
+34 NODOS DE PRIMER NIVEL OBLIGATORIOS
+==================================================
+
+1. IDENTIDAD_NUCLEAR
+2. FILOSOFIA_Y_MARCO_CONCEPTUAL
+3. NAMING_SEMANTICA_Y_LENGUAJE
+4. ARQUITECTURA_DE_PRODUCTO
+5. INGENIERIA_DE_LA_MANO
+6. INGENIERIA_DEL_BRAZO
+7. SENSADO_ACTUACION_Y_CONTROL
+8. ESPECIFICACIONES_Y_DESEMPENO
+9. COSTOS_PRICING_Y_ESTRUCTURA_ECONOMICA
+10. MERCADO_CLIENTES_Y_APLICACIONES
+11. BENCHMARKS_Y_COMPETENCIA
+12. DIFERENCIADORES_Y_PROPUESTA_DE_VALOR
+13. BRANDING_NARRATIVA_Y_TONO
+14. DOCUMENTACION_Y_KNOWLEDGE_BASE
+15. ROADMAP_VERSIONES_Y_EXPANSION
+16. COMUNIDAD_EDUCACION_Y_COLABORACIONES
+17. RIESGOS_VALIDACIONES_Y_CLAIMS
+18. PREGUNTAS_ABIERTAS_Y_DATOS_FALTANTES
+19. FUENTES_TRAZABILIDAD_Y_CONFIANZA
+20. GOBERNANZA_DEL_DATO_Y_MANTENIMIENTO
+21. ARQUITECTURA_DE_CONTROL
+22. ESTIMACION_DE_ESTADO_Y_FUSION
+23. SEGURIDAD_REFLEJOS_Y_LIMITES
+24. GEMELO_DIGITAL_Y_DINAMICA
+25. POLITICAS_ACTIVE_INFERENCE_Y_SKILLS
+26. SOFTWARE_TIEMPO_REAL_Y_COMPUTO
+27. SIMULACION_DATASET_Y_SIM_TO_REAL
+28. APLICACION_DE_CONTROL_Y_HMI
+29. PRODUCTO_DIGITAL_Y_FLUJOS_DE_USUARIO
+30. ROS_BRIDGE_Y_CONECTIVIDAD
+31. SKILLS_RUNS_Y_AUTOMATIZACION
+32. TEACHING_TELEOP_Y_DEMONSTRATION_LEARNING
+33. DATOS_REPLAY_Y_EXPORTS
+34. INTEGRACIONES_EMPRESARIALES_Y_ECOSISTEMA
