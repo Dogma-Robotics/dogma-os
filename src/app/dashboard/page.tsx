@@ -1006,6 +1006,7 @@ export default function Dashboard(){
 var _dark=useState(true),isDark=_dark[0],setIsDark=_dark[1];
 C=getTheme(isDark);
 var _designGuide=useState("DOGMA Brand: Navy #0A0A18 bg, Gold #C8A74B accents, Inter body, JetBrains Mono code. Reports: dark luxury, gold headers, metric grids, badges (pass=green fail=red warn=amber). Always include DOGMA header + confidential footer."),designGuide=_designGuide[0],setDesignGuide=_designGuide[1];
+var _designImages=useState([]),designImages=_designImages[0],setDesignImages=_designImages[1];
 var _showThinking=useState(false),showThinking=_showThinking[0],setShowThinking=_showThinking[1];
 var _streamingMsg=useState(null),streamingMsg=_streamingMsg[0],setStreamingMsg=_streamingMsg[1];
 var oc=useOpenClaw();
@@ -1019,6 +1020,8 @@ useEffect(function(){try{var t=localStorage.getItem("dogma-theme");if(t==="light
 useEffect(function(){try{localStorage.setItem("dogma-theme",isDark?"dark":"light");}catch(e){}},[isDark]);
 useEffect(function(){try{var g=localStorage.getItem("dogma-design-guide");if(g)setDesignGuide(g);}catch(e){}},[]);
 useEffect(function(){try{localStorage.setItem("dogma-design-guide",designGuide);}catch(e){}},[designGuide]);
+useEffect(function(){try{var imgs=localStorage.getItem("dogma-design-images");if(imgs)setDesignImages(JSON.parse(imgs));}catch(e){}},[]);
+useEffect(function(){try{localStorage.setItem("dogma-design-images",JSON.stringify(designImages));}catch(e){}},[designImages]);
 useEffect(function(){
   fetch("/api/dashboard/summary").then(function(r){return r.json();}).then(function(data){
     if(data.error||!data.ss)return; // fallback to seed
@@ -1877,6 +1880,7 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
       <div style={{display:"flex",borderBottom:"1px solid "+C.bd,flexShrink:0,position:"relative"}}><div onClick={function(){setIsDark(function(d){return !d;});}} style={{position:"absolute",right:8,top:5,cursor:"pointer",fontSize:9,padding:"2px 8px",borderRadius:3,background:C.bg3,color:C.tx2,border:"1px solid "+C.bd,zIndex:5}}>{isDark?"Light":"Dark"}</div>
         <div onClick={function(){setMode("chat");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="chat"?C.gold:C.tx3,borderBottom:mode==="chat"?"2px solid "+C.gold:"2px solid transparent",background:mode==="chat"?C.gold+"08":"transparent"}}>💬 Chat</div>
         
+        <div onClick={function(){setMode("design");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="design"?C.gold:C.tx3,borderBottom:mode==="design"?"2px solid "+C.gold:"2px solid transparent",background:mode==="design"?C.gold+"08":"transparent"}}>Design</div>
         <div onClick={function(){setMode("openclaw");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="openclaw"?C.gold:C.tx3,borderBottom:mode==="openclaw"?"2px solid "+C.gold:"2px solid transparent",background:mode==="openclaw"?C.gold+"08":"transparent"}}>OpenClaw</div>
         <div onClick={function(){setMode("timeline");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="timeline"?C.gold:C.tx3,borderBottom:mode==="timeline"?"2px solid "+C.gold:"2px solid transparent",background:mode==="timeline"?C.gold+"08":"transparent"}}>📊 Timeline</div>
 
@@ -1915,7 +1919,7 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
         </div>}
         <div ref={chatEnd}/>
       </div>
-      <div style={{padding:"4px 10px",borderTop:"1px solid "+C.bd,display:"flex",gap:6,alignItems:"center",flexShrink:0}}><div onClick={function(){setShowThinking(function(v){return !v;});}} style={{fontSize:9,padding:"2px 8px",borderRadius:3,cursor:"pointer",background:showThinking?C.gold+"15":"transparent",color:showThinking?C.gold:C.tx3,border:"1px solid "+(showThinking?C.gold+"30":C.bd),userSelect:"none"}}>{showThinking?"Thinking ON":"Thinking"}</div><div onClick={function(){var t=prompt("DOGMA Design Guidelines (injected when generating docs):\n\n"+designGuide.slice(0,300)+"\n\nEnter new guidelines:");if(t)setDesignGuide(t);}} style={{fontSize:9,padding:"2px 8px",borderRadius:3,cursor:"pointer",color:C.tx3,border:"1px solid "+C.bd,userSelect:"none"}}>Design Guide</div></div>
+      <div style={{padding:"4px 10px",borderTop:"1px solid "+C.bd,display:"flex",gap:6,alignItems:"center",flexShrink:0}}><div onClick={function(){setShowThinking(function(v){return !v;});}} style={{fontSize:9,padding:"2px 8px",borderRadius:3,cursor:"pointer",background:showThinking?C.gold+"15":"transparent",color:showThinking?C.gold:C.tx3,border:"1px solid "+(showThinking?C.gold+"30":C.bd),userSelect:"none"}}>{showThinking?"Thinking ON":"Thinking"}</div></div>
       <div style={{padding:"8px 10px",borderTop:"1px solid "+C.bd,display:"flex",gap:4,flexShrink:0}}>
         <input value={inp} onChange={function(e){setInp(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")sendAgent();}} placeholder={"Ask "+curAgent.name+"..."} style={{flex:1,padding:"6px 10px",fontSize:13,background:C.bg,border:"1px solid "+C.bd,borderRadius:3,color:C.tx,outline:"none"}}/>
         <Btn v="gold" onClick={sendAgent}>{"\u2191"}</Btn>
