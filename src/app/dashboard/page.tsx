@@ -582,7 +582,7 @@ if(nid==="fundraising"){var wp=Math.round(D.investors.reduce(function(a,v){retur
 <Sec>📨 Quick Update Generator</Sec>
 <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:8}}>
   {["Weekly Update","Monthly Report","Milestone Update"].map(function(tpl,i){
-    return <span key={i} onClick={function(){setMode("chat");setInp("Generate a "+tpl+" for DOGMA Robotics investors. Include current metrics: burn $"+(D.fin.burn/1000).toFixed(1)+"K/mo, runway "+D.fin.runway+"mo, "+D.pilots.length+" pilots in pipeline, "+D.investors.length+" investors tracked. Milestones: "+D.milestones.map(function(m){return m.title+" ("+m.pct+"%)";}).join(", ")+". Format as a professional investor email.");}} style={{padding:"4px 10px",fontSize:11,borderRadius:4,cursor:"pointer",background:C.gold+"08",color:C.gold,border:"1px solid "+C.gold+"20",fontWeight:600}}>{tpl} →</span>;
+    return <span key={i} onClick={function(){setMode("control");setInp("Generate a "+tpl+" for DOGMA Robotics investors. Include current metrics: burn $"+(D.fin.burn/1000).toFixed(1)+"K/mo, runway "+D.fin.runway+"mo, "+D.pilots.length+" pilots in pipeline, "+D.investors.length+" investors tracked. Milestones: "+D.milestones.map(function(m){return m.title+" ("+m.pct+"%)";}).join(", ")+". Format as a professional investor email.");}} style={{padding:"4px 10px",fontSize:11,borderRadius:4,cursor:"pointer",background:C.gold+"08",color:C.gold,border:"1px solid "+C.gold+"20",fontWeight:600}}>{tpl} →</span>;
   })}
 </div>
 <FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
@@ -1191,7 +1191,7 @@ var _searchOpen=useState(false),searchOpen=_searchOpen[0],setSearchOpen=_searchO
 var _chatW=useState(600),chatW=_chatW[0],setChatW=_chatW[1];
 useEffect(function(){setChatW(Math.round(window.innerWidth*0.33));},[]);
 var resizeRef=useRef(null);
-var _mode=useState("chat"),mode=_mode[0],setMode=_mode[1]; // "chat" or "swarm" or "timeline" or "approvals"
+var _mode=useState("control"),mode=_mode[0],setMode=_mode[1]; // "control" or "design" or "timeline" or "approvals"
 var _cmdOpen=useState(false),cmdOpen=_cmdOpen[0],setCmdOpen=_cmdOpen[1];
 var _cmdQ=useState(""),cmdQ=_cmdQ[0],setCmdQ=_cmdQ[1];
 var _swarmResult=useState(null),swarmResult=_swarmResult[0],setSwarmResult=_swarmResult[1];
@@ -1229,15 +1229,22 @@ var chatEnd=useRef(null);
 
 // Auth system
 var _auth=useState(false),authed=_auth[0],setAuthed=_auth[1];
-var _showLogin=useState(false),showLogin=_showLogin[0],setShowLogin=_showLogin[1];
 var _userName=useState(""),userName=_userName[0],setUserName=_userName[1];
 var _userRole=useState("viewer"),userRole=_userRole[0],setUserRole=_userRole[1];
-// Restore session from localStorage
+// Restore session - redirect to login if not authorized
 useEffect(function(){
   try{
     var s=localStorage.getItem("dogma_session");
-    if(s){var p=JSON.parse(s);setAuthed(true);setUserName(p.name||"");setUserRole(p.role||"admin");}
+    if(s){var p=JSON.parse(s);
+      var validEmails=["jeronimoolaresgoiti@gmail.com","jortiz@dogmarobotics.com"];
+      if(p.email&&validEmails.indexOf(p.email)>=0){
+        setAuthed(true);setUserName(p.name||"");setUserRole(p.role||"admin");
+        return;
+      }
+    }
   }catch(e){}
+  // Not authenticated - redirect to login
+  if(typeof window!=="undefined")window.location.href="/";
 },[]);
 // Restore saved data from localStorage
 useEffect(function(){
@@ -1253,21 +1260,10 @@ useEffect(function(){
   },2000);
   return function(){clearTimeout(t);};
 },[D]);
-var _pw=useState(""),pw=_pw[0],setPw=_pw[1];
-var _pwErr=useState(false),pwErr=_pwErr[0],setPwErr=_pwErr[1];
-var PASS="dogma2026";
-var _loginName=useState(""),loginName=_loginName[0],setLoginName=_loginName[1];
-var _loginRole=useState("admin"),loginRole=_loginRole[0],setLoginRole=_loginRole[1];
-var tryLogin=function(){
-  if(pw===PASS&&loginName.trim()){
-    setAuthed(true);setShowLogin(false);setPw("");setPwErr(false);
-    setUserName(loginName.trim());setUserRole(loginRole);
-    try{localStorage.setItem("dogma_session",JSON.stringify({name:loginName.trim(),role:loginRole,at:nw()}));}catch(e){}
-  }else{setPwErr(true);}
-};
 var doLogout=function(){
   setAuthed(false);setUserName("");setUserRole("viewer");
   try{localStorage.removeItem("dogma_session");}catch(e){}
+  if(typeof window!=="undefined")window.location.href="/";
 };
 var canEdit=mounted&&authed;
 var canGen=true; // Everyone can generate documents
@@ -1599,6 +1595,9 @@ var DATA_TOOLS=[
 {name:"advance_investor",description:"Advance investor stage",input_schema:{type:"object",properties:{investor_id:{type:"string"}},required:["investor_id"]}},
 {name:"resolve_incident",description:"Resolve incident",input_schema:{type:"object",properties:{incident_id:{type:"string"}},required:["incident_id"]}},
 {name:"complete_task",description:"Complete task",input_schema:{type:"object",properties:{task_id:{type:"string"}},required:["task_id"]}},
+{name:"update_node_data",description:"Update a field in a node's data row",input_schema:{type:"object",properties:{node_id:{type:"string"},row_id:{type:"string"},field:{type:"string"},value:{type:"string"}},required:["node_id","row_id","field","value"]}},
+{name:"add_node_row",description:"Add a new data row to a node",input_schema:{type:"object",properties:{node_id:{type:"string"},name:{type:"string"},description:{type:"string"},status:{type:"string"},criticality:{type:"string"}},required:["node_id","name"]}},
+{name:"delete_node_row",description:"Delete a data row from a node",input_schema:{type:"object",properties:{node_id:{type:"string"},row_id:{type:"string"}},required:["node_id","row_id"]}},
 ];
 // File tools (always available to everyone)
 var FILE_TOOLS=[
@@ -1624,6 +1623,26 @@ var execLocal=function(name,input){
   if(name==="advance_investor"){acts.advI(input.investor_id);return"Investor advanced";}
   if(name==="resolve_incident"){acts.resInc(input.incident_id);return"Incident resolved";}
   if(name==="complete_task"){acts.togTask(input.task_id);return"Task completed";}
+  // Node data mutation tools (for agents)
+  if(name==="update_node_data"){
+    if(!canEdit)return"DENIED: Not authenticated";
+    acts.seedUpdateCell(input.node_id,input.row_id,input.field,input.value);
+    acts.logActivity("edit",input.node_id,"","Agent updated "+input.field);
+    return"Updated "+input.node_id+"/"+input.row_id+"."+input.field;
+  }
+  if(name==="add_node_row"){
+    if(!canEdit)return"DENIED: Not authenticated";
+    var newRow={id:"agent_"+Date.now(),name:input.name||"",description:input.description||"",status:input.status||"planned",criticality:input.criticality||"medium",owner:input.owner||"Jero"};
+    acts.seedAddRow(input.node_id,newRow);
+    acts.logActivity("create",input.node_id,"","Agent added row: "+(input.name||""));
+    return"Added row to "+input.node_id;
+  }
+  if(name==="delete_node_row"){
+    if(!canEdit)return"DENIED: Not authenticated";
+    acts.seedDeleteRow(input.node_id,input.row_id);
+    acts.logActivity("delete",input.node_id,"","Agent deleted row");
+    return"Deleted row "+input.row_id;
+  }
   return"OK";
 };
 
@@ -1787,11 +1806,11 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
               var agentNames={planner:"planner",architect:"architect",researcher:"researcher",coder:"coder",reviewer:"reviewer",tester:"tester",security:"security-scanner",optimizer:"optimizer",documenter:"documenter"};
               var firstWord=parts.split(" ")[0];
               var agId=agentNames[firstWord];
-              if(agId){setAgentId(agId);setMode("chat");setInp(parts.slice(firstWord.length).trim());}
-              else{setMode("chat");setInp(q.replace(/^(run|ask) /,""));}
+              if(agId){setAgentId(agId);setMode("control");setInp(parts.slice(firstWord.length).trim());}
+              else{setMode("control");setInp(q.replace(/^(run|ask) /,""));}
             }
             // Mode switch
-            else if(q==="chat")setMode("chat");
+            else if(q==="chat")setMode("control");
             else if(q==="swarm")setMode("swarm");
             else if(q==="timeline"||q==="activity")setMode("timeline");
             else if(q==="approvals"||q==="queue")setMode("approvals");
@@ -1888,7 +1907,7 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
     userName={userName}
     userRole={userRole}
     authed={authed}
-    onLogin={function(){setShowLogin(true);}}
+    onLogin={function(){if(typeof window!=="undefined")window.location.href="/";}}
     onLogout={doLogout}
     approvalMode={approvalMode}
     onToggleApproval={function(){setApprovalMode(approvalMode==="advisory"?"execute":"advisory");}}
@@ -1996,18 +2015,23 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
 
       {/* Mode toggle: Chat / Swarm */}
       <div style={{display:"flex",borderBottom:"1px solid "+C.bd,flexShrink:0,position:"relative"}}>
-        <div onClick={function(){setMode("chat");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="chat"?C.gold:C.tx3,borderBottom:mode==="chat"?"2px solid "+C.gold:"2px solid transparent",background:mode==="chat"?C.gold+"08":"transparent"}}>💬 Chat</div>
-        
+        <div onClick={function(){setMode("control");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="control"?C.gold:C.tx3,borderBottom:mode==="control"?"2px solid "+C.gold:"2px solid transparent",background:mode==="control"?C.gold+"08":"transparent"}}>🦞 Control</div>
+
         <div onClick={function(){setMode("design");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="design"?C.gold:C.tx3,borderBottom:mode==="design"?"2px solid "+C.gold:"2px solid transparent",background:mode==="design"?C.gold+"08":"transparent"}}>Design</div>
-        <div onClick={function(){setMode("openclaw");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="openclaw"?C.gold:C.tx3,borderBottom:mode==="openclaw"?"2px solid "+C.gold:"2px solid transparent",background:mode==="openclaw"?C.gold+"08":"transparent"}}>OpenClaw</div>
         <div onClick={function(){setMode("timeline");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="timeline"?C.gold:C.tx3,borderBottom:mode==="timeline"?"2px solid "+C.gold:"2px solid transparent",background:mode==="timeline"?C.gold+"08":"transparent"}}>📊 Timeline</div>
 
 
         <div onClick={function(){setMode("approvals");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="approvals"?C.gold:C.tx3,borderBottom:mode==="approvals"?"2px solid "+C.gold:"2px solid transparent",background:mode==="approvals"?C.gold+"08":"transparent"}}>{pendingMuts.length>0?"⚠️":"✅"} Queue{pendingMuts.length>0?" ("+pendingMuts.length+")":""}</div>
       </div>
 
-      {/* ═══ CHAT MODE ═══ */}
-      {mode==="chat"&&<>
+      {/* ═══ CONTROL MODE ═══ */}
+      {mode==="control"&&<>
+      <div style={{padding:"8px 10px",borderBottom:"1px solid "+C.bd,display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
+        <div style={{width:8,height:8,borderRadius:"50%",background:oc.gateway.connected?C.g:C.r,boxShadow:oc.gateway.connected?"0 0 6px rgba(45,122,93,0.5)":"none"}}/>
+        <span style={{fontSize:12,fontWeight:600,color:oc.gateway.connected?C.g:C.r}}>{oc.gateway.connected?"OpenClaw Connected":"Cloud Mode"}</span>
+        <div style={{flex:1}}/>
+        <span style={{fontSize:9,color:C.tx3,fontFamily:"'JetBrains Mono',monospace"}}>{oc.gateway.connected?"localhost:18789":"Anthropic API"}</span>
+      </div>
       <div style={{padding:"6px 8px",borderBottom:"1px solid "+C.bd,flexShrink:0,maxHeight:160,overflowY:"auto"}}>
         {AGENT_CATEGORIES.map(function(cat){var catAgents=AGENTS.filter(function(a){return a.cat===cat.id;});return <div key={cat.id} style={{marginBottom:4}}>
           <div style={{fontSize:9,color:cat.color,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700,marginBottom:2}}>{cat.label}</div>
@@ -2497,7 +2521,8 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
         <div onClick={function(){setDesignGuide("DOGMA Brand: Navy #0A0A18 bg, Gold #C8A74B accents, Inter body, JetBrains Mono code. Reports: dark luxury, gold headers, metric grids, badges (pass=green fail=red warn=amber). Always include DOGMA header + confidential footer.");}} style={{marginTop:12,fontSize:10,color:C.tx3,cursor:"pointer",textDecoration:"underline"}}>Reset to defaults</div>
       </div>}
 
-      {mode==="openclaw"&&<div style={{flex:1,overflowY:"auto",padding:12}}>
+      {false&&<div style={{flex:1,overflowY:"auto",padding:12}}>
+        {/* OpenClaw tab removed - merged into Control */}
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
           <div style={{width:10,height:10,borderRadius:"50%",background:oc.gateway.connected?C.g:C.r,boxShadow:oc.gateway.connected?"0 0 8px rgba(45,122,93,0.5)":"none"}}/>
           <div style={{fontSize:15,fontWeight:700,color:C.gold}}>OpenClaw Gateway</div>
@@ -2532,7 +2557,7 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
         </div>
         <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Try it</div>
         <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-          {["Run my test suite","Audit npm dependencies","Review the auth code","Write a status report","Research actuator suppliers","Plan next sprint"].map(function(action){return <div key={action} onClick={function(){setMode("chat");setInp(action);}} style={{padding:"6px 10px",fontSize:11,borderRadius:3,cursor:"pointer",background:C.bg2,color:C.tx,border:"1px solid "+C.bd}}>{action}</div>;})}
+          {["Run my test suite","Audit npm dependencies","Review the auth code","Write a status report","Research actuator suppliers","Plan next sprint"].map(function(action){return <div key={action} onClick={function(){setMode("control");setInp(action);}} style={{padding:"6px 10px",fontSize:11,borderRadius:3,cursor:"pointer",background:C.bg2,color:C.tx,border:"1px solid "+C.bd}}>{action}</div>;})}
         </div>
       </div>}
 
@@ -2583,31 +2608,5 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
     </div>{/* close inner flex */}
     </div>{/* close chat panel */}
   </div>{/* close main area */}
-  {/* Login Modal */}
-  {showLogin&&<div onMouseDown={function(e){if(e.target===e.currentTarget){setShowLogin(false);setPwErr(false);setPw("");}}} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:100,display:"flex",alignItems:"center",justifyContent:"center"}}>
-    <div onMouseDown={function(e){e.stopPropagation();}} style={{background:C.bg1,border:"1px solid "+C.gold+"40",borderRadius:8,padding:24,width:380}}>
-      <div style={{fontSize:18,fontWeight:700,color:C.gold,marginBottom:6}}>Login to DOGMA OS</div>
-      <div style={{fontSize:12,color:C.tx2,marginBottom:16}}>Enter your name, role, and password to enable editing.</div>
-      <div style={{marginBottom:10}}>
-        <div style={{fontSize:10,color:C.tx3,marginBottom:2,textTransform:"uppercase"}}>Your Name</div>
-        <input value={loginName} onChange={function(e){setLoginName(e.target.value);}} placeholder="e.g. Jero" autoFocus style={{width:"100%",padding:"8px 12px",fontSize:14,background:C.bg,border:"1px solid "+C.bd,borderRadius:4,color:C.tx,outline:"none"}}/>
-      </div>
-      <div style={{marginBottom:10}}>
-        <div style={{fontSize:10,color:C.tx3,marginBottom:2,textTransform:"uppercase"}}>Role</div>
-        <div style={{display:"flex",gap:4}}>
-          {["admin","engineer","ops","finance","advisor"].map(function(r){return <span key={r} onClick={function(){setLoginRole(r);}} style={{padding:"4px 10px",fontSize:11,borderRadius:4,cursor:"pointer",fontWeight:600,textTransform:"uppercase",background:loginRole===r?C.gold+"15":"transparent",color:loginRole===r?C.gold:C.tx3,border:"1px solid "+(loginRole===r?C.gold+"40":C.bd)}}>{r}</span>;})}
-        </div>
-      </div>
-      <div style={{marginBottom:10}}>
-        <div style={{fontSize:10,color:C.tx3,marginBottom:2,textTransform:"uppercase"}}>Password</div>
-        <input value={pw} onChange={function(e){setPw(e.target.value);setPwErr(false);}} onKeyDown={function(e){if(e.key==="Enter")tryLogin();}} type="password" placeholder="Password" style={{width:"100%",padding:"8px 12px",fontSize:14,background:C.bg,border:"1px solid "+(pwErr?C.r:C.bd),borderRadius:4,color:C.tx,outline:"none"}}/>
-      </div>
-      {pwErr&&<div style={{fontSize:12,color:C.r,marginBottom:6}}>Name required + correct password.</div>}
-      <div style={{display:"flex",gap:8,marginTop:12}}>
-        <button onClick={tryLogin} style={{flex:1,padding:"8px",fontSize:13,fontWeight:700,background:C.gold+"10",color:C.gold,border:"1px solid "+C.gold+"30",borderRadius:4,cursor:"pointer"}}>Login</button>
-        <button onClick={function(){setShowLogin(false);setPw("");setPwErr(false);}} style={{padding:"8px 16px",fontSize:13,background:C.bg3,color:C.tx2,border:"1px solid "+C.bd,borderRadius:4,cursor:"pointer"}}>Cancel</button>
-      </div>
-    </div>
-  </div>}
   <style>{"@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');*{box-sizing:border-box;margin:0;padding:0}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:"+C.bg+"}::-webkit-scrollbar-thumb{background:"+C.bd+";border-radius:3px}button:hover{opacity:0.88}input::placeholder{color:"+C.tx3+"}"}</style>
 </div>);}
