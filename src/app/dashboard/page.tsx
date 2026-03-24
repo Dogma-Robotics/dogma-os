@@ -3,66 +3,24 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useOpenClaw } from '@/hooks/useOpenClaw';
+import { C } from '@/lib/theme';
+import { Dot, Tag, dc } from '@/components/ui/Badge';
+import { ProgressBar } from '@/components/ui/ProgressBar';
+import { Btn, Sec, Row, EText, EList, EditTitle, NoteBox } from '@/components/ui/EditableCell';
+import { CodeBlock } from '@/components/ui/CodeBlock';
+import { MsgText } from '@/components/ui/MsgText';
+import { TypeWriter } from '@/components/ui/TypeWriter';
+import { TopBar } from '@/components/dashboard/TopBar';
+import { ChatPanel } from '@/components/dashboard/ChatPanel';
+import { SettingsPanel } from '@/components/dashboard/SettingsPanel';
+import { NodeBoard } from '@/components/dashboard/NodeBoard';
+import { NODE_TREE, findNode } from '@/lib/nodes';
 var THREE = typeof window !== "undefined" ? require("three") : null;
-
-function getTheme(dark){return dark?{bg:"#030308",bg1:"#060610",bg2:"#0A0A18",bg3:"#0E0E20",bd:"#1A1A35",gold:"#C8A74B",gD:"rgba(200,167,75,0.06)",tx:"#C8C4BC",tx2:"#6E6A84",tx3:"#444060",g:"#2D7A5D",r:"#8A3333",a:"#A78530",b:"#3A5A7A",c:"#3A7A7A"}:{bg:"#B0AEA4",bg1:"#A8A69C",bg2:"#9F9D94",bg3:"#96948C",bd:"#8A8880",gold:"#9A7B2E",gD:"rgba(154,123,46,0.06)",tx:"#1A1A2E",tx2:"#5C5878",tx3:"#9994B0",g:"#1B6B4A",r:"#A33333",a:"#8A6A1E",b:"#2A4A6A",c:"#2A6A6A"};}
-var C=getTheme(true);
 var nw=function(){return new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});};
 var dy=function(){return new Date().toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});};
-function dc(s){return"pass validated active resolved low done".split(" ").indexOf(s)>=0?C.g:"fail blocked critical open high".split(" ").indexOf(s)>=0?C.r:"partial testing progress medium investigating iterating dev build progressing".split(" ").indexOf(s)>=0?C.a:C.b;}
-function Dot({s}){return <span style={{display:"inline-block",width:8,height:8,borderRadius:"50%",background:dc(s),flexShrink:0}}/>;}
-function Tag({children,color}){var c=color||C.tx2;return <span style={{display:"inline-flex",padding:"3px 8px",fontSize:12,fontFamily:"'JetBrains Mono',monospace",borderRadius:3,background:c+"0C",color:c,border:"1px solid "+c+"15",whiteSpace:"nowrap"}}>{children}</span>;}
-function PB({val,w,color}){return <div style={{width:w||60,height:6,background:C.bd,borderRadius:3,overflow:"hidden",display:"inline-block",verticalAlign:"middle"}}><div style={{width:Math.min(val||0,100)+"%",height:"100%",background:color||C.gold,borderRadius:3}}/></div>;}
-function Btn({children,onClick,v}){var m={default:[C.bg3,C.tx2,C.bd],gold:[C.gD,C.gold,C.gold+"22"],success:["rgba(45,122,93,0.08)",C.g,C.g+"22"]};var s=m[v||"default"]||m["default"];return <button onClick={onClick} style={{padding:"6px 16px",fontSize:13,fontWeight:600,textTransform:"uppercase",background:s[0],color:s[1],border:"1px solid "+s[2],borderRadius:3,cursor:"pointer"}}>{children}</button>;}
-function Sec({children}){return <div style={{fontSize:11,color:C.gold,textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:700,marginTop:14,marginBottom:6,borderBottom:"1px solid "+C.bd,paddingBottom:4}}>{children}</div>;}
-function Row({label,value,color,canEdit,onSave}){
-  var _e=useState(false),editing=_e[0],setEditing=_e[1];
-  var _v=useState(String(value||"")),val=_v[0],setVal=_v[1];
-  useEffect(function(){setVal(String(value||""));},[value]);
-  var save=function(){if(onSave)onSave(val);setEditing(false);};
-  return <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",fontSize:14,borderBottom:"1px solid "+C.bd+"40",gap:8}}>
-    <span style={{color:C.tx2,flexShrink:0}}>{label}</span>
-    {editing?<div style={{display:"flex",gap:3,flex:1,justifyContent:"flex-end"}}><input value={val} onChange={function(e){setVal(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")save();if(e.key==="Escape")setEditing(false);}} autoFocus style={{width:"100%",maxWidth:180,padding:"2px 6px",fontSize:13,background:C.bg,border:"1px solid "+C.gold+"40",borderRadius:2,color:C.tx,outline:"none",fontFamily:"'JetBrains Mono',monospace",textAlign:"right"}}/><span onClick={save} style={{cursor:"pointer",color:C.g,fontSize:11}}>OK</span></div>
-    :<div style={{display:"flex",alignItems:"center",gap:4}}>
-      <span style={{color:color||C.tx,fontFamily:"'JetBrains Mono',monospace"}}>{value}</span>
-      {canEdit&&onSave&&<span onClick={function(){setEditing(true);}} style={{cursor:"pointer",color:C.tx3,fontSize:10,opacity:0.6}}>&#9998;</span>}
-    </div>}
-  </div>;
-}
-function EList({items,canEdit,onUpdate,color}){
-  var _adding=useState(false),adding=_adding[0],setAdding=_adding[1];
-  var _nv=useState(""),nv=_nv[0],setNv=_nv[1];
-  var addItem=function(){if(nv.trim()&&onUpdate){onUpdate(items.concat([nv.trim()]));setNv("");setAdding(false);}};
-  var removeItem=function(idx){if(onUpdate){var a=items.slice();a.splice(idx,1);onUpdate(a);}};
-  var editItem=function(idx,val){if(onUpdate){var a=items.slice();a[idx]=val;onUpdate(a);}};
-  return <div>{(items||[]).map(function(x,i){return <EListItem key={i} text={x} color={color} canEdit={canEdit} onEdit={function(v){editItem(i,v);}} onRemove={function(){removeItem(i);}}/>;})}{canEdit&&!adding&&<div onClick={function(){setAdding(true);}} style={{fontSize:12,color:C.gold,cursor:"pointer",padding:"3px 0",opacity:0.7}}>+ Add item</div>}{canEdit&&adding&&<div style={{display:"flex",gap:3,marginTop:2}}><input value={nv} onChange={function(e){setNv(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")addItem();if(e.key==="Escape")setAdding(false);}} autoFocus placeholder="New item..." style={{flex:1,padding:"3px 6px",fontSize:13,background:C.bg,border:"1px solid "+C.gold+"40",borderRadius:2,color:C.tx,outline:"none"}}/><span onClick={addItem} style={{cursor:"pointer",color:C.g,fontSize:12}}>OK</span></div>}</div>;
-}
-function EListItem({text,color,canEdit,onEdit,onRemove}){
-  var _e=useState(false),ed=_e[0],setEd=_e[1];
-  var _v=useState(text),v=_v[0],setV=_v[1];
-  useEffect(function(){setV(text);},[text]);
-  if(ed)return <div style={{display:"flex",gap:3,padding:"2px 0"}}><input value={v} onChange={function(e){setV(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter"){onEdit(v);setEd(false);}if(e.key==="Escape")setEd(false);}} autoFocus style={{flex:1,padding:"2px 6px",fontSize:13,background:C.bg,border:"1px solid "+C.gold+"40",borderRadius:2,color:C.tx,outline:"none"}}/><span onClick={function(){onEdit(v);setEd(false);}} style={{cursor:"pointer",color:C.g,fontSize:11}}>OK</span></div>;
-  return <div style={{display:"flex",alignItems:"center",gap:4,padding:"3px 0",fontSize:14,color:color||C.tx}}>
-    <span style={{flex:1}}>- {text}</span>
-    {canEdit&&<span onClick={function(){setEd(true);}} style={{cursor:"pointer",color:C.tx3,fontSize:10,opacity:0.6}}>&#9998;</span>}
-    {canEdit&&<span onClick={onRemove} style={{cursor:"pointer",color:C.r,fontSize:10,opacity:0.6}}>x</span>}
-  </div>;
-}
-function EText({text,canEdit,onSave}){
-  var _e=useState(false),ed=_e[0],setEd=_e[1];
-  var _v=useState(text||""),v=_v[0],setV=_v[1];
-  useEffect(function(){setV(text||"");},[text]);
-  if(ed)return <div><textarea value={v} onChange={function(e){setV(e.target.value);}} rows={3} style={{width:"100%",padding:"6px 8px",fontSize:13,background:C.bg,border:"1px solid "+C.gold+"40",borderRadius:3,color:C.tx,outline:"none",resize:"vertical",fontFamily:"inherit"}}/><div style={{display:"flex",gap:4,marginTop:2}}><span onClick={function(){if(onSave)onSave(v);setEd(false);}} style={{cursor:"pointer",color:C.g,fontSize:12}}>Save</span><span onClick={function(){setV(text||"");setEd(false);}} style={{cursor:"pointer",color:C.tx3,fontSize:12}}>Cancel</span></div></div>;
-  return <div style={{position:"relative"}}><div style={{fontSize:14,color:C.tx,lineHeight:1.6}}>{text}</div>{canEdit&&<span onClick={function(){setEd(true);}} style={{position:"absolute",top:0,right:0,cursor:"pointer",color:C.tx3,fontSize:10,opacity:0.6}}>&#9998;</span>}</div>;
-}
-function NoteBox({notes,onAdd}){var ref=useRef(null);var go=function(){if(ref.current&&ref.current.value.trim()){onAdd(ref.current.value.trim());ref.current.value="";}};return <div style={{marginTop:10}}><Sec>Notes ({(notes||[]).length})</Sec>{(notes||[]).map(function(n,i){return <div key={i} style={{padding:"6px 8px",background:C.bg,borderRadius:3,marginBottom:3,borderLeft:"2px solid "+C.gold+"20",fontSize:13,color:C.tx,lineHeight:1.5}}>{n.t}<div style={{fontSize:11,color:C.tx3,marginTop:2}}>{n.by} - {n.at}</div></div>;})}<div style={{display:"flex",gap:4,marginTop:4}}><input ref={ref} placeholder="Add note..." style={{flex:1,padding:"6px 10px",fontSize:13,background:C.bg,border:"1px solid "+C.bd,borderRadius:3,color:C.tx,outline:"none"}} onKeyDown={function(e){if(e.key==="Enter")go();}}/><Btn v="gold" onClick={go}>+</Btn></div></div>;}
-
-
-function CodeBlock({code,lang}){var _cp=useState(false),copied=_cp[0],setCopied=_cp[1];var copy=function(){navigator.clipboard.writeText(code).then(function(){setCopied(true);setTimeout(function(){setCopied(false);},2000);});};return <div style={{position:"relative",margin:"8px 0",borderRadius:6,overflow:"hidden",border:"1px solid "+C.bd}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 12px",background:C.bg3,borderBottom:"1px solid "+C.bd}}><span style={{fontSize:11,color:C.tx3,fontFamily:"'JetBrains Mono',monospace"}}>{lang||"code"}</span><span onClick={copy} style={{fontSize:11,color:copied?C.g:C.tx3,cursor:"pointer",padding:"2px 8px",borderRadius:3,background:copied?C.g+"15":"transparent",border:"1px solid "+(copied?C.g+"30":"transparent"),userSelect:"none"}}>{copied?"Copied":"Copy"}</span></div><pre style={{margin:0,padding:"12px 16px",background:C.bg,overflowX:"auto",fontSize:13,lineHeight:1.6,fontFamily:"'JetBrains Mono',monospace",color:C.tx}}>{code}</pre></div>;}
+function PB({val,w,color}){return <ProgressBar val={val} w={w} color={color}/>;}
 function cleanResponse(t){if(!t)return"";var idx=t.indexOf("Error: {");if(idx>0)t=t.slice(0,idx).trim();return t;}
 function parseThinking(t){if(!t)return{thinking:"",text:t};var start=t.indexOf(":::thinking\n");var end=t.indexOf(":::thinking_end");if(start>=0&&end>start){return{thinking:t.slice(start+13,end).trim(),text:t.slice(end+16).trim()};}return{thinking:"",text:t};}
-function MsgText({text}){if(!text)return null;var parts=text.split(/(```[\s\S]*?```)/g);return <>{parts.map(function(part,i){if(part.startsWith("```")){var lines=part.slice(3,-3).split("\n");var lang=lines[0].trim();var code=lang?lines.slice(1).join("\n"):lines.join("\n");if(!lang)lang="";return <CodeBlock key={i} code={code} lang={lang}/>;} var inlineParts=part.split(/(`[^`]+`)/g);return <span key={i}>{inlineParts.map(function(ip,j){if(ip.startsWith("`")&&ip.endsWith("`")){return <code key={j} style={{padding:"1px 6px",borderRadius:3,background:C.bg3,color:C.gold,fontSize:12,fontFamily:"'JetBrains Mono',monospace",border:"1px solid "+C.bd}}>{ip.slice(1,-1)}</code>;}return ip;})}</span>;})}</>;}
-function TypeWriter({text,color}){var _shown=useState(0),shown=_shown[0],setShown=_shown[1];var prev=useRef("");useEffect(function(){if(text.length>prev.current.length){var i=prev.current.length;prev.current=text;function tick(){if(i<text.length){i++;setShown(i);requestAnimationFrame(tick);}}tick();}else{setShown(text.length);prev.current=text;}},[text]);var visible=text.slice(0,shown);return <div style={{padding:"6px 10px",borderRadius:6,background:C.bg2,borderLeft:"2px solid "+color,fontSize:13,color:C.tx,lineHeight:1.5,whiteSpace:"pre-wrap"}}><MsgText text={visible}/><span style={{display:"inline-block",width:6,height:14,background:C.gold,marginLeft:2,animation:"blink 1s infinite"}}></span></div>;}
 
 
 // File upload component per node
@@ -692,14 +650,6 @@ if(nid==="team"){var doneCount=D.tasks.filter(function(t){return t.status==="don
 if(nid==="roadmap"){var avgS=Math.round(D.safety.reduce(function(a,s){return a+s.cov;},0)/D.safety.length);return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Roadmap</div><Sec>Milestones</Sec>{D.milestones.map(function(m,i){return <div key={i} style={{padding:"8px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{fontSize:14}}><span style={{fontWeight:600}}>{m.title}</span> <Tag color={dc(m.risk)}>{m.risk}</Tag> <span style={{color:C.tx3}}>{m.target}</span></div><div style={{marginTop:3}}><PB val={m.pct} w={100}/> <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{m.pct}%</span></div>{m.blockers.length>0&&<div style={{fontSize:12,color:C.r,marginTop:2}}>{m.blockers.join(" | ")}</div>}</div>;})}<Sec>Safety ({avgS}%)</Sec>{D.safety.map(function(sf,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",fontSize:14}}><span style={{flex:1}}>{sf.name}</span><PB val={sf.cov} w={50} color={sf.cov>70?C.g:sf.cov>50?C.a:C.r}/><span style={{fontFamily:"'JetBrains Mono',monospace"}}>{sf.cov}%</span></div>;})}<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
 return null;}
 
-function EditTitle({text,canEdit,onSave}){
-  var _e=useState(false),editing=_e[0],setEditing=_e[1];
-  var _v=useState(text),val=_v[0],setVal=_v[1];
-  useEffect(function(){setVal(text);},[text]);
-  if(!canEdit)return <div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>{text}</div>;
-  if(editing)return <div style={{marginBottom:8}}><input value={val} onChange={function(e){setVal(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter"&&val.trim()){onSave(val.trim());setEditing(false);}if(e.key==="Escape"){setVal(text);setEditing(false);}}} autoFocus style={{width:"100%",fontSize:20,fontWeight:700,padding:"4px 8px",background:C.bg,border:"1px solid "+C.gold+"40",borderRadius:4,color:C.gold,outline:"none",fontFamily:"inherit"}}/></div>;
-  return <div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8,cursor:"pointer",display:"flex",alignItems:"center",gap:6}} onClick={function(){setEditing(true);}}>{text}<span style={{fontSize:11,color:C.tx3,opacity:0.5}}>✏️</span></div>;
-}
 
 function SubPage({sub,D,acts,files,onUpload,onRemove}){if(!sub)return null;var d=sub.data;var tp=sub.type;var ce=acts.canEdit;var uf=acts.updateField;var uaf=acts.updateArrayField;
 // col mapping
@@ -1007,8 +957,8 @@ var AGENT_CATEGORIES=[
 ];
 
 export default function Dashboard(){
-var _dark=useState(true),isDark=_dark[0],setIsDark=_dark[1];
-C=getTheme(isDark);
+var _showSettings=useState(false),showSettings=_showSettings[0],setShowSettings=_showSettings[1];
+var _agentEditPolicy=useState('approval'),agentEditPolicy=_agentEditPolicy[0],setAgentEditPolicy=_agentEditPolicy[1];
 var _designGuide=useState("DOGMA Brand: Navy #0A0A18 bg, Gold #C8A74B accents, Inter body, JetBrains Mono code. Reports: dark luxury, gold headers, metric grids, badges (pass=green fail=red warn=amber). Always include DOGMA header + confidential footer."),designGuide=_designGuide[0],setDesignGuide=_designGuide[1];
 var _designImages=useState([]),designImages=_designImages[0],setDesignImages=_designImages[1];
 var _showThinking=useState(false),showThinking=_showThinking[0],setShowThinking=_showThinking[1];
@@ -1020,8 +970,7 @@ var _pendingMutations=useState([]),pendingMuts=_pendingMutations[0],setPendingMu
 var _approvalMode=useState('advisory'),approvalMode=_approvalMode[0],setApprovalMode=_approvalMode[1];
 
 // Load data from API on mount
-useEffect(function(){try{var t=localStorage.getItem("dogma-theme");if(t==="light")setIsDark(false);}catch(e){}},[]);
-useEffect(function(){try{localStorage.setItem("dogma-theme",isDark?"dark":"light");}catch(e){}},[isDark]);
+// Dark theme only — no theme toggle
 useEffect(function(){try{var g=localStorage.getItem("dogma-design-guide");if(g)setDesignGuide(g);}catch(e){}},[]);
 useEffect(function(){try{localStorage.setItem("dogma-design-guide",designGuide);}catch(e){}},[designGuide]);
 useEffect(function(){try{var imgs=localStorage.getItem("dogma-design-images");if(imgs)setDesignImages(JSON.parse(imgs));}catch(e){}},[]);
@@ -1730,47 +1679,38 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
       </div>
     </div>
   </div>}
+  {/* Settings Panel */}
+  <SettingsPanel
+    open={showSettings}
+    onClose={function(){setShowSettings(false);}}
+    userName={userName}
+    userRole={userRole}
+    gatewayConnected={oc.gateway.connected}
+    approvalMode={approvalMode}
+    onToggleApproval={function(){setApprovalMode(approvalMode==="advisory"?"execute":"advisory");}}
+    agentEditPolicy={agentEditPolicy}
+    onSetAgentPolicy={setAgentEditPolicy}
+  />
   {/* Top Bar */}
-  <div style={{height:42,background:C.bg1,borderBottom:"1px solid "+C.bd,display:"flex",alignItems:"center",padding:"0 16px",gap:12,flexShrink:0,zIndex:30}}>
-    <div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:22,height:22,background:C.gold,borderRadius:3,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{color:C.bg,fontWeight:900,fontSize:12,fontFamily:"monospace"}}>D</span></div><span style={{fontSize:13,fontWeight:700,color:C.gold}}>DOGMA OS</span></div><a href="/settings" style={{color:C.tx3,fontSize:11,textDecoration:"none"}}>⚙ Connections</a>
-    <div style={{width:1,height:18,background:C.bd}}/><span style={{fontSize:12,color:C.tx2}}>{dy()}</span>
-    <div style={{position:"relative"}}>
-      <input value={search} onChange={function(e){setSearch(e.target.value);setSearchOpen(e.target.value.length>=2);}} onFocus={function(){if(search.length>=2)setSearchOpen(true);}} placeholder="Search nodes, tasks, pilots..." style={{width:220,padding:"4px 10px 4px 26px",fontSize:12,background:C.bg,border:"1px solid "+C.bd,borderRadius:3,color:C.tx,outline:"none"}}/>
-      <span style={{position:"absolute",left:8,top:5,fontSize:12,color:C.tx3}}>{"\uD83D\uDD0D"}</span>
-      {searchOpen&&searchResults.length>0&&<div style={{position:"absolute",top:30,left:0,width:350,maxHeight:400,overflowY:"auto",background:C.bg1,border:"1px solid "+C.bd,borderRadius:6,zIndex:50,boxShadow:"0 8px 24px rgba(0,0,0,0.5)"}}>
-        {searchResults.map(function(r,i){return <div key={i} onClick={function(){
-          if(r.level==="main"){setSel({level:"main",id:r.id});if(r.id!=="command")setXp(function(p){var n=Object.assign({},p);n[r.id]=true;return n;});}
-          else{setXp(function(p){var n=Object.assign({},p);n[r.parent]=true;return n;});setSel({level:"sub",id:r.id});}
-          setSearch("");setSearchOpen(false);
-        }} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",cursor:"pointer",borderBottom:"1px solid "+C.bd+"40"}} onMouseEnter={function(e){e.currentTarget.style.background=C.bg3;}} onMouseLeave={function(e){e.currentTarget.style.background="transparent";}}>
-          <div style={{width:8,height:8,borderRadius:"50%",background:r.color,flexShrink:0}}/>
-          <div style={{flex:1}}>
-            <div style={{fontSize:13,color:C.tx,fontWeight:500}}>{r.label}</div>
-            <div style={{fontSize:10,color:C.tx3}}>{r.type}{r.parent?" \u2022 "+r.parent:""}</div>
-          </div>
-          <span style={{fontSize:12,fontFamily:"'JetBrains Mono',monospace",color:r.color}}>{r.metric}</span>
-        </div>;})}
-      </div>}
-    </div>
-    <div style={{flex:1}}/>
-    {[["RUN",D.fin.runway+"mo",D.fin.runway<4?C.r:C.a],["INC",oI,oI?C.r:C.g],["CRIT",cr,cr?C.r:C.g],["MAT",am+"%",am>60?C.g:C.a],["PILOTS",D.pilots.length,C.gold]].map(function(x,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:4,padding:"0 6px"}}><span style={{fontSize:9,color:C.tx3}}>{x[0]}</span><span style={{fontSize:14,fontWeight:600,color:x[2],fontFamily:"monospace"}}>{x[1]}</span></div>;})}
-    <div style={{width:1,height:18,background:C.bd}}/>
-    <div onClick={function(){if(authed){doLogout();}else{setShowLogin(true);}}} style={{display:"flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:3,cursor:"pointer",background:authed?C.g+"15":C.bg3,border:"1px solid "+(authed?C.g+"30":C.bd)}}>
-      <span style={{fontSize:12}}>{authed?"\uD83D\uDD13":"\uD83D\uDD12"}</span>
-      <span style={{fontSize:10,color:authed?C.g:C.a,fontWeight:600}}>{authed?(userName||"ADMIN")+" ("+userRole+")":"Login"}</span>
-    </div>
-    {userInfo.loaded&&<div style={{display:"flex",alignItems:"center",gap:4,padding:"3px 8px",borderRadius:3,background:C.bg3,border:"1px solid "+C.bd}}>
-      <span style={{fontSize:10,color:C.gold,fontWeight:600}}>{userInfo.name.split(" ")[0]}</span>
-      <span style={{fontSize:8,padding:"1px 5px",borderRadius:2,background:C.gold+"15",color:C.gold,fontWeight:700,textTransform:"uppercase"}}>{userInfo.role.replace("_"," ")}</span>
-    </div>}
-    {authed&&<div style={{display:"flex",alignItems:"center",gap:3,padding:"3px 8px",borderRadius:3,background:C.bg3,border:"1px solid "+C.bd}}>
-      <span style={{fontSize:9,color:C.tx3}}>VIEW:</span>
-      <span style={{fontSize:10,color:userRole==="admin"?C.gold:userRole==="engineer"?C.b:C.g,fontWeight:600,textTransform:"uppercase"}}>{userRole||"admin"}</span>
-    </div>}
-    <div onClick={function(){setApprovalMode(approvalMode==="advisory"?"execute":"advisory");}} style={{display:"flex",alignItems:"center",gap:3,padding:"3px 8px",borderRadius:3,cursor:"pointer",background:approvalMode==="execute"?C.r+"15":C.g+"15",border:"1px solid "+(approvalMode==="execute"?C.r+"30":C.g+"30")}}>
-      <span style={{fontSize:10,color:approvalMode==="execute"?C.r:C.g,fontWeight:600}}>{approvalMode==="advisory"?"\uD83D\uDD12 Advisory":"\u26A1 Execute"}</span>
-    </div>
-  </div>
+  <TopBar
+    search={search}
+    onSearchChange={function(v){setSearch(v);setSearchOpen(v.length>=2);}}
+    searchResults={searchResults}
+    onSearchSelect={function(r){
+      if(r.level==="main"){setSel({level:"main",id:r.id});if(r.id!=="command")setXp(function(p){var n=Object.assign({},p);n[r.id]=true;return n;});}
+      else{setXp(function(p){var n=Object.assign({},p);n[r.parent]=true;return n;});setSel({level:"sub",id:r.id});}
+    }}
+    kpis={[{label:"RUN",value:D.fin.runway+"mo",color:D.fin.runway<4?C.r:C.a},{label:"INC",value:oI,color:oI?C.r:C.g},{label:"CRIT",value:cr,color:cr?C.r:C.g},{label:"MAT",value:am+"%",color:am>60?C.g:C.a},{label:"PILOTS",value:D.pilots.length,color:C.gold}]}
+    userName={userName}
+    userRole={userRole}
+    authed={authed}
+    onLogin={function(){setShowLogin(true);}}
+    onLogout={doLogout}
+    approvalMode={approvalMode}
+    onToggleApproval={function(){setApprovalMode(approvalMode==="advisory"?"execute":"advisory");}}
+    onOpenSettings={function(){setShowSettings(true);}}
+    onOpenCmd={function(){setCmdOpen(true);setCmdQ("");}}
+  />
 
   {/* Main area — Sidebar + 3D/Page + Chat right */}
   <div style={{flex:1,display:"flex",overflow:"hidden",position:"relative"}}>
@@ -1881,7 +1821,7 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
       {/* Mode toggle: Chat / Swarm */}
-      <div style={{display:"flex",borderBottom:"1px solid "+C.bd,flexShrink:0,position:"relative"}}><div onClick={function(){setIsDark(function(d){return !d;});}} style={{position:"absolute",right:8,top:5,cursor:"pointer",fontSize:9,padding:"2px 8px",borderRadius:3,background:C.bg3,color:C.tx2,border:"1px solid "+C.bd,zIndex:5}}>{isDark?"Light":"Dark"}</div>
+      <div style={{display:"flex",borderBottom:"1px solid "+C.bd,flexShrink:0,position:"relative"}}>
         <div onClick={function(){setMode("chat");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="chat"?C.gold:C.tx3,borderBottom:mode==="chat"?"2px solid "+C.gold:"2px solid transparent",background:mode==="chat"?C.gold+"08":"transparent"}}>💬 Chat</div>
         
         <div onClick={function(){setMode("design");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="design"?C.gold:C.tx3,borderBottom:mode==="design"?"2px solid "+C.gold:"2px solid transparent",background:mode==="design"?C.gold+"08":"transparent"}}>Design</div>
