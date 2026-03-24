@@ -648,11 +648,13 @@ if(nid==="roadmap"){var avgS=Math.round(D.safety.reduce(function(a,s){return a+s
 // ── Catch-all: render any NODE_TREE node via NodeBoard + seed data ──
 var nodeConfig=findNode(nid);
 if(nodeConfig){
-  var seedRows=(SEED_DATA[nid]||[]).slice();
+  var seedRows=acts.getSeedRows(nid);
+  var ce=acts.canEdit;
   return(<div>
     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
       <span style={{fontSize:22}}>{nodeConfig.icon}</span>
       <div style={{fontSize:22,fontWeight:700,color:C.gold}}>{nodeConfig.label}</div>
+      {!ce&&<span style={{fontSize:10,color:C.tx3,padding:"2px 8px",background:C.bg3,borderRadius:3,border:"1px solid "+C.bd}}>🔒 Login to edit</span>}
     </div>
     <div style={{fontSize:13,color:C.tx2,marginBottom:16,lineHeight:1.6}}>{nodeConfig.description}</div>
     {nodeConfig.children&&nodeConfig.children.length>0&&<div style={{marginBottom:16}}>
@@ -667,12 +669,12 @@ if(nodeConfig){
     {seedRows.length>0&&<div>
       <Sec>Data ({seedRows.length} entries)</Sec>
       <NodeBoard nodeConfig={nodeConfig} rows={seedRows}
-        onCellEdit={function(rowId,key,val){}}
-        onAddRow={function(){if(acts.showCreateForm)acts.showCreateForm(nodeConfig.dbTable);}}
-        onDeleteRow={function(rowId){if(confirm("Delete this entry?")&&acts.apiDelete)acts.apiDelete(nodeConfig.dbTable,rowId);}}
+        onCellEdit={ce?function(rowId,key,val){acts.seedUpdateCell(nid,rowId,key,val);}:undefined}
+        onAddRow={ce?function(){var newId="new_"+Date.now();var name=prompt("Name:");if(!name||!name.trim())return;var desc=prompt("Description:")||"";acts.seedAddRow(nid,{id:newId,name:name.trim(),description:desc,maturity_level:0,status:"planned",criticality:"medium",owner:"Jero"});}:undefined}
+        onDeleteRow={ce?function(rowId){if(confirm("Delete this entry?"))acts.seedDeleteRow(nid,rowId);}:undefined}
       />
     </div>}
-    {seedRows.length===0&&<div style={{padding:20,textAlign:"center",color:C.tx3,fontSize:13}}>No seed data. Supabase table: <span style={{color:C.gold,fontFamily:"'JetBrains Mono',monospace"}}>{nodeConfig.dbTable}</span></div>}
+    {seedRows.length===0&&<div style={{padding:20,textAlign:"center",color:C.tx3,fontSize:13}}>No data yet.{ce&&<span onClick={function(){var newId="new_"+Date.now();var name=prompt("Name:");if(!name||!name.trim())return;acts.seedAddRow(nid,{id:newId,name:name.trim(),description:"",maturity_level:0,status:"planned",criticality:"medium",owner:"Jero"});}} style={{color:C.gold,cursor:"pointer",marginLeft:6}}>+ Add first entry</span>}</div>}
     <FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/>
   </div>);
 }
@@ -932,11 +934,12 @@ if(tp==="sply")return(<div>
 // ── Catch-all for SubPage: render NODE_TREE child via NodeBoard ──
 var subNodeConfig=findNode(sub.id);
 if(subNodeConfig){
-  var subSeedRows=(SEED_DATA[sub.id]||[]).slice();
+  var subSeedRows=acts.getSeedRows(sub.id);
   return(<div>
     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
       <span style={{fontSize:20}}>{subNodeConfig.icon}</span>
       <div style={{fontSize:20,fontWeight:700,color:C.gold}}>{subNodeConfig.label}</div>
+      {!ce&&<span style={{fontSize:10,color:C.tx3,padding:"2px 8px",background:C.bg3,borderRadius:3,border:"1px solid "+C.bd}}>🔒 Login to edit</span>}
     </div>
     <div style={{fontSize:13,color:C.tx2,marginBottom:12}}>{subNodeConfig.description}</div>
     {subNodeConfig.children&&subNodeConfig.children.length>0&&<div style={{marginBottom:12}}>
@@ -945,8 +948,12 @@ if(subNodeConfig){
         {subNodeConfig.children.map(function(ch){return <span key={ch.id} style={{padding:"4px 8px",fontSize:11,borderRadius:3,background:C.bg,border:"1px solid "+C.bd,color:C.tx,cursor:"pointer"}} onClick={function(){}}>{ch.icon} {ch.label}</span>;})}
       </div>
     </div>}
-    {subSeedRows.length>0&&<NodeBoard nodeConfig={subNodeConfig} rows={subSeedRows} onCellEdit={function(){}} onAddRow={function(){}} onDeleteRow={function(){}}/>}
-    {subSeedRows.length===0&&<div style={{padding:16,textAlign:"center",color:C.tx3,fontSize:12}}>No data — table: {subNodeConfig.dbTable}</div>}
+    {subSeedRows.length>0&&<NodeBoard nodeConfig={subNodeConfig} rows={subSeedRows}
+      onCellEdit={ce?function(rowId,key,val){acts.seedUpdateCell(sub.id,rowId,key,val);}:undefined}
+      onAddRow={ce?function(){var newId="new_"+Date.now();var name=prompt("Name:");if(!name||!name.trim())return;acts.seedAddRow(sub.id,{id:newId,name:name.trim(),description:"",maturity_level:0,status:"planned",criticality:"medium",owner:"Jero"});}:undefined}
+      onDeleteRow={ce?function(rowId){if(confirm("Delete this entry?"))acts.seedDeleteRow(sub.id,rowId);}:undefined}
+    />}
+    {subSeedRows.length===0&&<div style={{padding:16,textAlign:"center",color:C.tx3,fontSize:12}}>No data.{ce&&<span onClick={function(){var newId="new_"+Date.now();var name=prompt("Name:");if(!name||!name.trim())return;acts.seedAddRow(sub.id,{id:newId,name:name.trim(),description:"",maturity_level:0,status:"planned",criticality:"medium",owner:"Jero"});}} style={{color:C.gold,cursor:"pointer",marginLeft:6}}>+ Add first entry</span>}</div>}
   </div>);
 }
 return null;}
@@ -1007,6 +1014,26 @@ var AGENT_CATEGORIES=[
 export default function Dashboard(){
 var _showSettings=useState(false),showSettings=_showSettings[0],setShowSettings=_showSettings[1];
 var _agentEditPolicy=useState('approval'),agentEditPolicy=_agentEditPolicy[0],setAgentEditPolicy=_agentEditPolicy[1];
+// Seed data local edits (add/delete/update rows per node)
+var _seedEdits=useState({}),seedEdits=_seedEdits[0],setSeedEdits=_seedEdits[1];
+var getSeedRows=function(nodeId){
+  var base=(SEED_DATA[nodeId]||[]).slice();
+  var edits=seedEdits[nodeId];
+  if(!edits)return base;
+  // Apply deletions
+  if(edits.deleted)base=base.filter(function(r){return edits.deleted.indexOf(r.id)<0;});
+  // Apply additions
+  if(edits.added)base=base.concat(edits.added);
+  // Apply field edits
+  if(edits.updates){Object.keys(edits.updates).forEach(function(rowId){var idx=base.findIndex(function(r){return r.id===rowId;});if(idx>=0)base[idx]=Object.assign({},base[idx],edits.updates[rowId]);});}
+  return base;
+};
+var seedAddRow=function(nodeId,row){setSeedEdits(function(prev){var e=Object.assign({},prev[nodeId]||{});e.added=(e.added||[]).concat([row]);var out=Object.assign({},prev);out[nodeId]=e;return out;});};
+var seedDeleteRow=function(nodeId,rowId){setSeedEdits(function(prev){var e=Object.assign({},prev[nodeId]||{});e.deleted=(e.deleted||[]).concat([rowId]);var out=Object.assign({},prev);out[nodeId]=e;return out;});};
+var seedUpdateCell=function(nodeId,rowId,key,val){setSeedEdits(function(prev){var e=Object.assign({},prev[nodeId]||{});e.updates=Object.assign({},e.updates||{});e.updates[rowId]=Object.assign({},e.updates[rowId]||{});e.updates[rowId][key]=val;var out=Object.assign({},prev);out[nodeId]=e;return out;});};
+// Persist seed edits to localStorage
+useEffect(function(){try{var saved=localStorage.getItem("dogma_seed_edits");if(saved)setSeedEdits(JSON.parse(saved));}catch(e){}},[]);
+useEffect(function(){try{localStorage.setItem("dogma_seed_edits",JSON.stringify(seedEdits));}catch(e){}},[seedEdits]);
 var _designGuide=useState("DOGMA Brand: Navy #0A0A18 bg, Gold #C8A74B accents, Inter body, JetBrains Mono code. Reports: dark luxury, gold headers, metric grids, badges (pass=green fail=red warn=amber). Always include DOGMA header + confidential footer."),designGuide=_designGuide[0],setDesignGuide=_designGuide[1];
 var _designImages=useState([]),designImages=_designImages[0],setDesignImages=_designImages[1];
 var _showThinking=useState(false),showThinking=_showThinking[0],setShowThinking=_showThinking[1];
@@ -1308,7 +1335,7 @@ var removeSubItem=function(col,eid,field,idx){
   });
   addLog("Removed item from "+col+"/"+eid+"."+field);
 };
-var acts={addNote:addNote,advP:advP,advI:advI,resInc:resInc,togTask:togTask,updateField:updateField,updateArrayField:updateArrayField,updateFin:updateFin,canEdit:canEdit,canGen:canGen,persistField:persistField,apiCreate:apiCreate,apiDelete:apiDelete,apiSave:apiSave,addSubItem:addSubItem,editSubItem:editSubItem,removeSubItem:removeSubItem,showCreateForm:function(type){setShowCreate({type:type});}};
+var acts={addNote:addNote,advP:advP,advI:advI,resInc:resInc,togTask:togTask,updateField:updateField,updateArrayField:updateArrayField,updateFin:updateFin,canEdit:canEdit,canGen:canGen,persistField:persistField,apiCreate:apiCreate,apiDelete:apiDelete,apiSave:apiSave,addSubItem:addSubItem,editSubItem:editSubItem,removeSubItem:removeSubItem,showCreateForm:function(type){setShowCreate({type:type});},getSeedRows:getSeedRows,seedAddRow:seedAddRow,seedDeleteRow:seedDeleteRow,seedUpdateCell:seedUpdateCell};
 
 var allSubs=useMemo(function(){var r=[];Object.keys(xp).forEach(function(k){if(xp[k])r=r.concat(getSubs(k,D));});return r;},[xp,D]);
 var allSSubs=useMemo(function(){var r=[];Object.keys(xp2).forEach(function(k){if(xp2[k]){var s=allSubs.find(function(x){return x.id===k;});if(s)r=r.concat(getSSubs(s));}});return r;},[xp2,allSubs]);
