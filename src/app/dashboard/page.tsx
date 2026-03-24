@@ -2358,7 +2358,52 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
 
       
       {/* ═══ APPROVALS MODE ═══ */}
-      {mode==="approvals"&&<>
+      {mode==="design"&&<div style={{flex:1,overflowY:"auto",padding:12}}>
+        <div style={{fontSize:15,fontWeight:700,color:C.gold,marginBottom:4}}>Design Guide</div>
+        <div style={{fontSize:11,color:C.tx2,marginBottom:12}}>These guidelines are injected into agents when they generate documents, reports, and presentations.</div>
+        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:6}}>Brand Guidelines</div>
+        <textarea value={designGuide} onChange={function(e){setDesignGuide(e.target.value);}} style={{width:"100%",minHeight:180,padding:"10px 12px",fontSize:12,lineHeight:1.6,background:C.bg,border:"1px solid "+C.bd,borderRadius:4,color:C.tx,outline:"none",resize:"vertical",fontFamily:"'JetBrains Mono',monospace"}}/>
+        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginTop:16,marginBottom:6}}>Reference Images</div>
+        <div style={{fontSize:11,color:C.tx2,marginBottom:8}}>Upload logos, color palettes, mockups, or style references.</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}}>
+          {designImages.map(function(img,i){return <div key={i} style={{position:"relative",width:100,height:100,borderRadius:4,overflow:"hidden",border:"1px solid "+C.bd}}>
+            <img src={img.data} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+            <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"2px 4px",background:"rgba(0,0,0,0.7)",fontSize:9,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{img.name}</div>
+            <div onClick={function(){setDesignImages(function(prev){return prev.filter(function(_,j){return j!==i;});});}} style={{position:"absolute",top:2,right:4,cursor:"pointer",color:"#fff",fontSize:12,textShadow:"0 1px 3px rgba(0,0,0,0.8)"}}>x</div>
+          </div>;})}
+        </div>
+        <div style={{position:"relative"}}>
+          <input type="file" accept="image/*" multiple onChange={function(e){var files=e.target.files;if(files){for(var i=0;i<files.length;i++){(function(file){var reader=new FileReader();reader.onload=function(ev){setDesignImages(function(prev){return prev.concat([{name:file.name,data:ev.target.result}]);});};reader.readAsDataURL(file);})(files[i]);}e.target.value="";}}} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer"}}/>
+          <div style={{padding:"12px",border:"1px dashed "+C.bd,borderRadius:4,textAlign:"center",cursor:"pointer",fontSize:12,color:C.tx3}}>+ Upload reference images</div>
+        </div>
+        <div onClick={function(){setDesignGuide("DOGMA Brand: Navy #0A0A18 bg, Gold #C8A74B accents, Inter body, JetBrains Mono code. Reports: dark luxury, gold headers, metric grids, badges (pass=green fail=red warn=amber). Always include DOGMA header + confidential footer.");}} style={{marginTop:12,fontSize:10,color:C.tx3,cursor:"pointer",textDecoration:"underline"}}>Reset to defaults</div>
+      </div>}
+
+      {mode==="openclaw"&&<div style={{flex:1,overflowY:"auto",padding:12}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
+          <div style={{width:10,height:10,borderRadius:"50%",background:C.g,boxShadow:"0 0 8px rgba(45,122,93,0.5)"}}/>
+          <div style={{fontSize:15,fontWeight:700,color:C.gold}}>OpenClaw Gateway</div>
+          <div style={{fontSize:10,color:C.tx2,fontFamily:"'JetBrains Mono',monospace"}}>localhost:18789</div>
+        </div>
+        <div style={{fontSize:12,color:C.tx2,lineHeight:1.7,marginBottom:16}}>OpenClaw is an open-source AI agent runtime on your machine. Agents can run terminal commands, browse the web, read and write files, and execute code.</div>
+        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Computer access</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:16}}>
+          <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:13,fontWeight:600,color:C.tx}}>Terminal</div><div style={{fontSize:11,color:C.tx2,marginTop:3}}>bash, npm, python, git, docker, psql</div></div>
+          <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:13,fontWeight:600,color:C.tx}}>Browser</div><div style={{fontSize:11,color:C.tx2,marginTop:3}}>Navigate, scrape, test UIs, read docs</div></div>
+          <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:13,fontWeight:600,color:C.tx}}>Files</div><div style={{fontSize:11,color:C.tx2,marginTop:3}}>Read, create, edit code and documents</div></div>
+          <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:13,fontWeight:600,color:C.tx}}>Web Search</div><div style={{fontSize:11,color:C.tx2,marginTop:3}}>Research, papers, competitor analysis</div></div>
+        </div>
+        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Features</div>
+        <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:16}}>
+          {[["SOUL.md Identity","Agent personality in a version-controlled Markdown file"],["SKILL.md Modules","5,400+ community skills from ClawHub"],["Persistent Memory","MEMORY.md stores context between sessions"],["Session History","JSONL transcripts, resume any conversation"],["Multi-Channel","WhatsApp, Telegram, Slack, Discord, iMessage"],["Tool Approval","Sensitive actions require your approval"],["Canvas (A2UI)","Live visual interfaces pushed by agents"],["Heartbeat","Background daemon for proactive scheduled tasks"]].map(function(item){return <div key={item[0]} style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>{item[0]}</div><div style={{fontSize:11,color:C.tx2}}>{item[1]}</div></div>;})}
+        </div>
+        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Try it</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+          {["Run my test suite","Audit npm dependencies","Review the auth code","Write a status report","Research actuator suppliers","Plan next sprint"].map(function(action){return <div key={action} onClick={function(){setMode("chat");setInp(action);}} style={{padding:"6px 10px",fontSize:11,borderRadius:3,cursor:"pointer",background:C.bg2,color:C.tx,border:"1px solid "+C.bd}}>{action}</div>;})}
+        </div>
+      </div>}
+
+            {mode==="approvals"&&<>
       <div style={{flex:1,overflowY:"auto",padding:10}}>
         <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:6}}>⚠️ Approval Queue</div>
         <div style={{fontSize:11,color:C.tx2,marginBottom:12}}>Agent-proposed mutations waiting for your approval.</div>
