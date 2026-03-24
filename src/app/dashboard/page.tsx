@@ -59,7 +59,8 @@ function NoteBox({notes,onAdd}){var ref=useRef(null);var go=function(){if(ref.cu
 
 
 function CodeBlock({code,lang}){var _cp=useState(false),copied=_cp[0],setCopied=_cp[1];var copy=function(){navigator.clipboard.writeText(code).then(function(){setCopied(true);setTimeout(function(){setCopied(false);},2000);});};return <div style={{position:"relative",margin:"8px 0",borderRadius:6,overflow:"hidden",border:"1px solid "+C.bd}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 12px",background:C.bg3,borderBottom:"1px solid "+C.bd}}><span style={{fontSize:11,color:C.tx3,fontFamily:"'JetBrains Mono',monospace"}}>{lang||"code"}</span><span onClick={copy} style={{fontSize:11,color:copied?C.g:C.tx3,cursor:"pointer",padding:"2px 8px",borderRadius:3,background:copied?C.g+"15":"transparent",border:"1px solid "+(copied?C.g+"30":"transparent"),userSelect:"none"}}>{copied?"Copied":"Copy"}</span></div><pre style={{margin:0,padding:"12px 16px",background:C.bg,overflowX:"auto",fontSize:13,lineHeight:1.6,fontFamily:"'JetBrains Mono',monospace",color:C.tx}}>{code}</pre></div>;}
-function cleanResponse(t){if(!t)return"";var idx=t.indexOf("Error: {");if(idx>0)return t.slice(0,idx).trim();return t;}
+function cleanResponse(t){if(!t)return"";var idx=t.indexOf("Error: {");if(idx>0)t=t.slice(0,idx).trim();return t;}
+function parseThinking(t){if(!t)return{thinking:"",text:t};var start=t.indexOf(":::thinking\n");var end=t.indexOf(":::thinking_end");if(start>=0&&end>start){return{thinking:t.slice(start+13,end).trim(),text:t.slice(end+16).trim()};}return{thinking:"",text:t};}
 function MsgText({text}){if(!text)return null;var parts=text.split(/(```[\s\S]*?```)/g);return <>{parts.map(function(part,i){if(part.startsWith("```")){var lines=part.slice(3,-3).split("\n");var lang=lines[0].trim();var code=lang?lines.slice(1).join("\n"):lines.join("\n");if(!lang)lang="";return <CodeBlock key={i} code={code} lang={lang}/>;} var inlineParts=part.split(/(`[^`]+`)/g);return <span key={i}>{inlineParts.map(function(ip,j){if(ip.startsWith("`")&&ip.endsWith("`")){return <code key={j} style={{padding:"1px 6px",borderRadius:3,background:C.bg3,color:C.gold,fontSize:12,fontFamily:"'JetBrains Mono',monospace",border:"1px solid "+C.bd}}>{ip.slice(1,-1)}</code>;}return ip;})}</span>;})}</>;}
 
 // File upload component per node
@@ -1573,7 +1574,7 @@ var sendAgent=function(){if(!inp.trim()||ld)return;var userTxt=inp.trim();setInp
       setPendingMuts(function(prev){return prev.concat(mutations.map(function(m){return Object.assign({},m,{status:"pending",at:nw(),agent:agentId});}));});
       text+="\\n\\n\uD83D\uDD12 "+mutations.length+" mutation(s) proposed (advisory mode). Review in approval queue.";
     }
-    setMsgs(function(prev){var n=Object.assign({},prev);n[agentId]=(n[agentId]||[]).concat([{role:"ai",via:(data.gateway&&data.gateway.connected)?"openclaw":"cloud",text:text,files:files,mutations:mutations}]);return n;});
+    setMsgs(function(prev){var n=Object.assign({},prev);var parsed=parseThinking(text);n[agentId]=(n[agentId]||[]).concat([{role:"ai",via:(data.gateway&&data.gateway.connected)?"openclaw":"cloud",text:parsed.text,thinking:parsed.thinking,files:files,mutations:mutations}]);return n;});
     // If agent made data mutations, refresh local state from Supabase
     if(mutations.length>0){
       fetch("/api/dashboard/summary").then(function(r){return r.json();}).then(function(data){
@@ -1906,7 +1907,7 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
       </div>
       <div style={{flex:1,overflowY:"auto",padding:10,display:"flex",flexDirection:"column",gap:4}}>
         {curMsgs.length===0&&<div style={{fontSize:13,color:C.tx3,textAlign:"center",padding:20}}>Ask {curAgent.name}<br/><span style={{fontSize:11}}>Single agent — direct conversation</span></div>}
-        {curMsgs.map(function(msg,i){return <div key={i} style={{maxWidth:"90%",alignSelf:msg.role==="user"?"flex-end":"flex-start"}}><div style={{padding:"6px 10px",borderRadius:6,background:msg.role==="user"?C.bg3:C.bg2,borderLeft:msg.role==="ai"?"2px solid "+(msg.via==="openclaw"?"#2D7A5D":curAgent.color):"none",fontSize:13,color:C.tx,lineHeight:1.5,whiteSpace:"pre-wrap"}}><MsgText text={msg.text}/></div>{msg.files&&msg.files.length>0&&msg.files.map(function(f,j){var isH=f.name&&f.name.endsWith(".html");return <div key={j} style={{marginTop:3}}>
+        {curMsgs.map(function(msg,i){return <div key={i} style={{maxWidth:"90%",alignSelf:msg.role==="user"?"flex-end":"flex-start"}}><div style={{padding:"6px 10px",borderRadius:6,background:msg.role==="user"?C.bg3:C.bg2,borderLeft:msg.role==="ai"?"2px solid "+(msg.via==="openclaw"?"#2D7A5D":curAgent.color):"none",fontSize:13,color:C.tx,lineHeight:1.5,whiteSpace:"pre-wrap"}}><MsgText text={msg.text}/></div>{msg.thinking&&showThinking&&<div style={{padding:"6px 10px",borderRadius:6,background:C.bg3,borderLeft:"2px solid "+C.a,fontSize:11,color:C.tx3,lineHeight:1.5,whiteSpace:"pre-wrap",marginTop:3,maxHeight:200,overflowY:"auto"}}><div style={{fontSize:9,color:C.a,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700,marginBottom:4}}>Claude thinking</div>{msg.thinking}</div>}{msg.files&&msg.files.length>0&&msg.files.map(function(f,j){var isH=f.name&&f.name.endsWith(".html");return <div key={j} style={{marginTop:3}}>
 <div style={{display:"flex",alignItems:"center",gap:6,padding:"6px 8px",background:C.bg,border:"1px solid "+C.gold+"30",borderRadius:4,cursor:"pointer"}}>
 <span style={{fontSize:16}}>{f.icon||"\uD83D\uDCC1"}</span>
 <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>{f.name}</div></div>
@@ -1916,7 +1917,7 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
         {ld&&<div style={{fontSize:12,color:curAgent.color,fontStyle:"italic",padding:4}}>{curAgent.name} working...</div>}
         {streamingMsg&&streamingMsg.agentId===agentId&&<div style={{maxWidth:"90%",alignSelf:"flex-start"}}>
           {showThinking&&streamingMsg.thinking&&<div style={{padding:"6px 10px",borderRadius:6,background:C.bg3,borderLeft:"2px solid "+C.a,fontSize:12,color:C.tx3,lineHeight:1.5,whiteSpace:"pre-wrap",marginBottom:4,maxHeight:200,overflowY:"auto"}}><div style={{fontSize:9,color:C.a,textTransform:"uppercase",letterSpacing:"0.08em",fontWeight:700,marginBottom:4}}>Thinking...</div>{streamingMsg.thinking}</div>}
-          {streamingMsg.text&&<div style={{padding:"6px 10px",borderRadius:6,background:C.bg2,borderLeft:"2px solid "+curAgent.color,fontSize:13,color:C.tx,lineHeight:1.5,whiteSpace:"pre-wrap"}}><MsgText text={streamingMsg.text}/><span style={{display:"inline-block",width:6,height:14,background:C.gold,marginLeft:2,animation:"blink 1s infinite"}}></span></div>}
+          {streamingMsg.text&&<TypeWriter text={streamingMsg.text} color={curAgent.color}/>}
         </div>}
         <div ref={chatEnd}/>
       </div>
@@ -2382,11 +2383,17 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
 
       {mode==="openclaw"&&<div style={{flex:1,overflowY:"auto",padding:12}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}>
-          <div style={{width:10,height:10,borderRadius:"50%",background:C.g,boxShadow:"0 0 8px rgba(45,122,93,0.5)"}}/>
+          <div style={{width:10,height:10,borderRadius:"50%",background:oc.gateway.connected?C.g:C.r,boxShadow:oc.gateway.connected?"0 0 8px rgba(45,122,93,0.5)":"none"}}/>
           <div style={{fontSize:15,fontWeight:700,color:C.gold}}>OpenClaw Gateway</div>
-          <div style={{fontSize:10,color:C.tx2,fontFamily:"'JetBrains Mono',monospace"}}>localhost:18789</div>
+          <div style={{fontSize:10,color:C.tx2,fontFamily:"'JetBrains Mono',monospace"}}>{oc.gateway.connected?"Connected":"Offline"}</div>
         </div>
-        <div style={{fontSize:12,color:C.tx2,lineHeight:1.7,marginBottom:16}}>OpenClaw is an open-source AI agent runtime on your machine. Agents can run terminal commands, browse the web, read and write files, and execute code.</div>
+        <div style={{fontSize:12,color:C.tx2,lineHeight:1.7,marginBottom:12}}>OpenClaw is an open-source AI agent runtime (100K+ GitHub stars, MIT licensed) that runs on your machine and gives your AI agents real-world capabilities. When connected, every message you send in Chat is routed through the local gateway, giving agents full access to your computer.</div>
+        <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd,marginBottom:16}}>
+          <div style={{fontSize:11,color:C.tx,lineHeight:1.7}}>
+            <div style={{fontWeight:600,color:C.gold,marginBottom:4}}>How it works</div>
+            When you send a message, DOGMA OS tries to route it through OpenClaw first. If the gateway is running locally, the agent gets full computer access and can execute actions on your machine. If the gateway is offline, the message falls back to the Claude API in the cloud (text-only, no execution). The green/red badge next to the agent name shows which path was used.
+          </div>
+        </div>
         <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Computer access</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:16}}>
           <div style={{padding:"10px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:13,fontWeight:600,color:C.tx}}>Terminal</div><div style={{fontSize:11,color:C.tx2,marginTop:3}}>bash, npm, python, git, docker, psql</div></div>
@@ -2396,7 +2403,16 @@ return(<div style={{width:"100vw",height:"100vh",overflow:"hidden",background:C.
         </div>
         <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Features</div>
         <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:16}}>
-          {[["SOUL.md Identity","Agent personality in a version-controlled Markdown file"],["SKILL.md Modules","5,400+ community skills from ClawHub"],["Persistent Memory","MEMORY.md stores context between sessions"],["Session History","JSONL transcripts, resume any conversation"],["Multi-Channel","WhatsApp, Telegram, Slack, Discord, iMessage"],["Tool Approval","Sensitive actions require your approval"],["Canvas (A2UI)","Live visual interfaces pushed by agents"],["Heartbeat","Background daemon for proactive scheduled tasks"]].map(function(item){return <div key={item[0]} style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>{item[0]}</div><div style={{fontSize:11,color:C.tx2}}>{item[1]}</div></div>;})}
+          {[["SOUL.md Identity","Define who your agent is in a plain Markdown file. Version-control personality, tone, domain knowledge, and mission. Each agent can have a unique identity."],["SKILL.md Modules","Install modular skills from ClawHub (5,400+ community skills) or write your own. Skills are YAML+Markdown files that teach agents new capabilities like API integrations, data analysis, or domain expertise."],["Persistent Memory","MEMORY.md stores long-term context between sessions. Your agent remembers your project, past decisions, preferences, and ongoing work. Embedding-based semantic search for recall."],["Session History","Every conversation saved as JSONL transcripts on disk. Resume any conversation where you left off. Session compaction summarizes old turns when context window fills."],["Multi-Channel","Talk to the same agent from 20+ platforms: WhatsApp, Telegram, Slack, Discord, iMessage, Signal, Google Chat, Microsoft Teams, IRC, Matrix, and more. Group routing and mention gating."],["Tool Approval","Three-tier security model: ask (requires approval), record (logs actions), ignore (unrestricted). Glob patterns for tool allowlists/denylists per agent. VirusTotal scanning for skills."],["Canvas (A2UI)","Agents can push live interactive HTML interfaces to a visual canvas via WebSocket. Build dashboards, previews, forms, and tools that agents control in real-time."],["Heartbeat Daemon","Background process (systemd/launchd) with configurable heartbeat interval. Agents can run proactive tasks on a schedule without being prompted: monitoring, reports, alerts."],["Browser Control","Dedicated OpenClaw-managed Chrome/Chromium with CDP control. Agents can navigate, click, fill forms, take screenshots, upload files, and manage browser profiles."],["Voice Mode","Wake words on macOS/iOS, continuous voice on Android. ElevenLabs TTS + system fallback. Push-to-talk overlay for hands-free interaction."],["Security Model","Gateway binds to loopback by default. Token/password auth for all connections. Device pairing with cryptographic signatures. Docker sandboxing for non-main sessions."],["Model Agnostic","Works with Claude, GPT, Gemini, Llama, Mistral, and local models via Ollama/vLLM. Automatic failover chain with exponential backoff between providers."]].map(function(item){return <div key={item[0]} style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd}}><div style={{fontSize:12,fontWeight:600,color:C.tx}}>{item[0]}</div><div style={{fontSize:11,color:C.tx2}}>{item[1]}</div></div>;})}
+        </div>
+        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Getting started</div>
+        <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:16}}>
+          <div style={{padding:"8px 12px",background:C.bg2,borderRadius:4,border:"1px solid "+C.bd,fontSize:11,color:C.tx2,lineHeight:1.6,fontFamily:"'JetBrains Mono',monospace"}}>
+            <span style={{color:C.tx}}>1.</span> sudo npm i -g openclaw@latest<br/>
+            <span style={{color:C.tx}}>2.</span> openclaw onboard<br/>
+            <span style={{color:C.tx}}>3.</span> openclaw gateway run<br/>
+            <span style={{color:C.tx}}>4.</span> Open this dashboard - badge turns green
+          </div>
         </div>
         <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:8}}>Try it</div>
         <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
