@@ -59,6 +59,7 @@ function NoteBox({notes,onAdd}){var ref=useRef(null);var go=function(){if(ref.cu
 
 
 function CodeBlock({code,lang}){var _cp=useState(false),copied=_cp[0],setCopied=_cp[1];var copy=function(){navigator.clipboard.writeText(code).then(function(){setCopied(true);setTimeout(function(){setCopied(false);},2000);});};return <div style={{position:"relative",margin:"8px 0",borderRadius:6,overflow:"hidden",border:"1px solid "+C.bd}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 12px",background:C.bg3,borderBottom:"1px solid "+C.bd}}><span style={{fontSize:11,color:C.tx3,fontFamily:"'JetBrains Mono',monospace"}}>{lang||"code"}</span><span onClick={copy} style={{fontSize:11,color:copied?C.g:C.tx3,cursor:"pointer",padding:"2px 8px",borderRadius:3,background:copied?C.g+"15":"transparent",border:"1px solid "+(copied?C.g+"30":"transparent"),userSelect:"none"}}>{copied?"Copied":"Copy"}</span></div><pre style={{margin:0,padding:"12px 16px",background:C.bg,overflowX:"auto",fontSize:13,lineHeight:1.6,fontFamily:"'JetBrains Mono',monospace",color:C.tx}}>{code}</pre></div>;}
+function cleanResponse(t){if(!t)return"";var idx=t.indexOf("Error: {");if(idx>0)return t.slice(0,idx).trim();return t;}
 function MsgText({text}){if(!text)return null;var parts=text.split(/(```[\s\S]*?```)/g);return <>{parts.map(function(part,i){if(part.startsWith("```")){var lines=part.slice(3,-3).split("\n");var lang=lines[0].trim();var code=lang?lines.slice(1).join("\n"):lines.join("\n");if(!lang)lang="";return <CodeBlock key={i} code={code} lang={lang}/>;} var inlineParts=part.split(/(`[^`]+`)/g);return <span key={i}>{inlineParts.map(function(ip,j){if(ip.startsWith("`")&&ip.endsWith("`")){return <code key={j} style={{padding:"1px 6px",borderRadius:3,background:C.bg3,color:C.gold,fontSize:12,fontFamily:"'JetBrains Mono',monospace",border:"1px solid "+C.bd}}>{ip.slice(1,-1)}</code>;}return ip;})}</span>;})}</>;}
 
 // File upload component per node
@@ -1558,12 +1559,12 @@ var sendAgent=function(){if(!inp.trim()||ld)return;var userTxt=inp.trim();setInp
           try{var ev=JSON.parse(payload);
             if(ev.type==="thinking"){thinkText+=ev.text;setStreamingMsg(function(p){return p?Object.assign({},p,{thinking:thinkText}):p;});}
             else if(ev.type==="text"){fullText+=ev.text;setStreamingMsg(function(p){return p?Object.assign({},p,{text:fullText}):p;});}
-            else if(ev.type==="done"){setStreamingMsg(null);return{text:fullText||ev.text||"(no response)",gateway:ev.gateway||{connected:false}};}
+            else if(ev.type==="done"){setStreamingMsg(null);return{text:cleanResponse(fullText||ev.text)||"(no response)",gateway:ev.gateway||{connected:false}};}
           }catch(e){}}}
       return pump();});}
     return pump();
   }).then(function(data){
-    var text=data.text||"(empty)";
+    var text=cleanResponse(data.text)||"(empty)";
     if(data.mcpConnected&&data.mcpConnected.length>0)setMcpConn(data.mcpConnected);
     if(data.user&&data.user.role&&!userInfo.loaded)setUserInfo({name:data.user.name||'',role:data.user.role||'',loaded:true});
     var files=(data.files||[]).map(function(f){return{name:f.name,icon:f.type==="csv"?"\uD83D\uDCC8":f.type==="html"?"\uD83D\uDCC4":f.type==="json"?"\uD83D\uDCCB":f.type==="md"?"\uD83D\uDCDD":"\uD83D\uDCC1",url:f.url,at:nw()};});
