@@ -1027,7 +1027,7 @@ var _showSettings=useState(false),showSettings=_showSettings[0],setShowSettings=
 var _agentEditPolicy=useState('approval'),agentEditPolicy=_agentEditPolicy[0],setAgentEditPolicy=_agentEditPolicy[1];
 // Dynamic node tree (add/delete nodes at any level)
 var _dynTree=useState(null),dynTree=_dynTree[0],setDynTree=_dynTree[1];
-var liveTree=dynTree||NODE_TREE;
+var liveTree=mounted&&dynTree?dynTree:NODE_TREE;
 // Persist dynamic tree
 useEffect(function(){try{var saved=localStorage.getItem("dogma_dyn_tree");if(saved){var parsed=JSON.parse(saved);if(parsed&&parsed.length>0)setDynTree(parsed);}}catch(e){}},[]);
 useEffect(function(){if(dynTree)try{localStorage.setItem("dogma_dyn_tree",JSON.stringify(dynTree));}catch(e){}},[dynTree]);
