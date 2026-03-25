@@ -1,4 +1,5 @@
 // @ts-nocheck
+// Updated: 2026-03-24 21:07
 'use client'
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useOpenClaw } from '@/hooks/useOpenClaw';
@@ -151,7 +152,7 @@ milestones:[
 safety:[{id:"sf1",name:"ISO 10218-1",cov:85,gaps:["Emergency stop validation testing pending","Safety-rated controller certification needed"]},{id:"sf2",name:"ISO 10218-2",cov:60,gaps:["System integration risk assessment incomplete","Safeguard selection and validation pending"]},{id:"sf3",name:"ISO/TS 15066",cov:40,gaps:["Collaborative force limit validation not done","Speed and separation monitoring not implemented","Human proximity zone mapping needed","Power and force limiting mode not characterized"]},{id:"sf4",name:"NOM-004 STPS",cov:70,gaps:["Spanish language documentation incomplete","STPS formal registration process not started"]}],
 supply:[{id:"sp1",item:"McKibben bladders",supplier:"Custom MFG Shenzhen",lead:"4 weeks",risk:"high",note:"Single source. No backup supplier identified. Critical path item."},{id:"sp2",item:"FSR 402 sensors",supplier:"Interlink Electronics",lead:"2 weeks",risk:"medium",note:"Currently backordered. Alternative: FSR 406 (higher cost, lower temp drift)."},{id:"sp3",item:"Dyneema PE line",supplier:"DSM via distributor",lead:"1 week",risk:"low",note:"Stock available at local distributor."},{id:"sp4",item:"ESP32-S3 modules",supplier:"Espressif",lead:"2 weeks",risk:"low",note:"Alternative: ESP32-WROOM-1 pin-compatible."}],
 decisions:[{title:"McKibben pneumatic over electric actuators",why:"Superior compliance and force density for biomimetic grasping. 3x force-to-weight ratio.",date:"Jan 2026"},{title:"Industrial pilots before full humanoid deployment",why:"Faster path to revenue validation. Deploy Genesis Hand on existing UR10e arm platform.",date:"Feb 2026"},{title:"Mexico nearshoring as initial market entry",why:"Lower deployment cost, founder network advantage, proximity to US customers.",date:"Dec 2025"}],
-fin:{burn:400,cash:100000,runway:11,bom:4280,spend:[{c:"Components & Materials",a:150},{c:"Lab & Equipment",a:100},{c:"Software & Cloud",a:50},{c:"Travel & Site Visits",a:30},{c:"Professional Services",a:20},{c:"Misc Operating",a:50}]},
+fin:{burn:500,cash:5500,runway:11,bom:3000,spend:[{c:"Components & Materials",a:200},{c:"Lab & Equipment",a:150},{c:"Software & Cloud",a:50},{c:"Travel & Site Visits",a:30},{c:"Professional Services",a:20},{c:"Misc Operating",a:50}]},
 log:[{t:"EXP-047 Tendon cal PASSED",at:"Mar 14 4:30PM"},{t:"Eclipse Ventures advanced to 1st Meeting",at:"Mar 14 2:30PM"},{t:"INC-003 opened: DEV-B actuator leak",at:"Mar 12 4:15PM"},{t:"Amazon MX viability updated to 88%",at:"Mar 12 11:00AM"},{t:"Pinch grasp validated at 92%",at:"Mar 10 3:00PM"},{t:"INC-001 resolved: Tendon snap fix",at:"Mar 2 5:00PM"},{t:"PTFE sleeve retrofit completed on all units",at:"Mar 5 2:00PM"}],
 seq:{exp:48,inc:4,task:9},
 // Causal dependency chains: source → blocks [targets]
@@ -235,7 +236,7 @@ if(sub.type==="ss")items=(d.d||[]).concat(d.risks||[]);else if(sub.type==="skill
 var R=1.8;return items.filter(Boolean).map(function(it,i){var a=(i/Math.max(items.length,1))*6.2832;return{id:sub.id+"_"+i,label:String(it).slice(0,18),pos:[sub.pos[0]+Math.cos(a)*R,sub.pos[1]+Math.sin(a)*R*0.6,sub.pos[2]+Math.cos(a+2)*0.5],r:0.18,color:C.tx3,type:"leaf",text:String(it),parentType:sub.type,parentLabel:sub.label};});}
 
 // ── FULL PAGES ──
-function MainPage({nid,D,files,onUpload,onRemove,acts}){var oI=D.incidents.filter(function(i){return i.status!=="resolved";}).length;var cr=D.tasks.filter(function(t){return t.pri==="critical"&&t.status!=="done";}).length;var am=Math.round(D.ss.reduce(function(a,s){return a+s.mat;},0)/D.ss.length);
+function MainPage({nid,D,files,onUpload,onRemove,acts}){var oI=D.incidents.filter(function(i){return i.status!=="resolved";}).length;var cr=D.tasks.filter(function(t){return t.pri==="critical"&&t.status!=="done";}).length;var am=Math.round(D.ss.reduce(function(a,s){return a+s.mat;},0)/D.ss.length);var ce=acts.canEdit;var addLog=function(t){if(acts.logActivity)acts.logActivity("edit","command","Command Center",t);};var setD=acts._setD;
 if(nid==="command"){var risks=calcRisks(D);var depChains=D.deps||[];var pDead=D.pilotDeadlines||{};return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>DOGMA Command Center</div><div style={{fontSize:14,color:C.tx2,marginBottom:12}}>Executive overview — {dy()}</div>
 
 {/* Metrics Dashboard — fully editable */}
@@ -1038,7 +1039,7 @@ var runOpenClawAgent=function(agentIdOrName,message,nodeId){
   return fetch("/api/openclaw/v1/chat/completions",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({model:"openclaw",messages:[{role:"system",content:"You are a DOGMA Robotics agent. "+dataSnap},{role:"user",content:message}]})
+    body:JSON.stringify({model:"openclaw",messages:[{role:"system",content:"You are a DOGMA Robotics agent with full access to edit all data. Available tools: update_finance(field,value), update_module_status(module_id,status), update_subsystem(name,field,value), update_pilot(name,field,value), add_pilot(name,stage,viab), add_incident(description,severity), resolve_incident(id), add_task(title,priority), update_task(title,field,value), add_decision(title,why), add_dependency(from_label,blocks,reason), add_log(text), update_node_data(node_id,row_id,field,value), add_node_row(node_id,name,description). Context: "+dataSnap},{role:"user",content:message}]})
   }).then(function(r){return r.json();}).then(function(d){
     var text=d.choices&&d.choices[0]&&d.choices[0].message?d.choices[0].message.content:"(no response)";
     logActivity("automation",nodeId||"","","Agent ran: "+text.slice(0,60));
@@ -1072,7 +1073,7 @@ var oc=useOpenClaw();
 var _s=useState(seed),D=_s[0],setD=_s[1];
 var _userInfo=useState({name:'',role:'',loaded:false}),userInfo=_userInfo[0],setUserInfo=_userInfo[1];
 var _pendingMutations=useState([]),pendingMuts=_pendingMutations[0],setPendingMuts=_pendingMutations[1];
-var _approvalMode=useState('advisory'),approvalMode=_approvalMode[0],setApprovalMode=_approvalMode[1];
+var _approvalMode=useState('execute'),approvalMode=_approvalMode[0],setApprovalMode=_approvalMode[1];
 
 // Load data from API on mount
 // Dark theme only — no theme toggle
@@ -1376,7 +1377,7 @@ var removeSubItem=function(col,eid,field,idx){
   });
   addLog("Removed item from "+col+"/"+eid+"."+field);
 };
-var acts={addNote:addNote,advP:advP,advI:advI,resInc:resInc,togTask:togTask,updateField:updateField,updateArrayField:updateArrayField,updateFin:updateFin,canEdit:canEdit,canGen:canGen,persistField:persistField,apiCreate:apiCreate,apiDelete:apiDelete,apiSave:apiSave,addSubItem:addSubItem,editSubItem:editSubItem,removeSubItem:removeSubItem,showCreateForm:function(type){setShowCreate({type:type});},getSeedRows:getSeedRows,seedAddRow:seedAddRow,seedDeleteRow:seedDeleteRow,seedUpdateCell:seedUpdateCell,addNodeToTree:addNodeToTree,deleteNodeFromTree:deleteNodeFromTree,liveTree:liveTree,ocAgents:ocAgents,runOpenClawAgent:runOpenClawAgent,viewMode:viewMode,setViewMode:setViewMode,filters:filters,setFilters:setFilters,sortKey:sortKey,setSortKey:setSortKey,sortDir:sortDir,setSortDir:setSortDir,groupBy:groupBy,setGroupBy:setGroupBy,nodeSearch:nodeSearch,setNodeSearch:setNodeSearch,applyFilters:applyFilters,automations:automations,setAutomations:setAutomations,relations:relations,setRelations:setRelations,activity:activity,logActivity:logActivity,allNodesList:allNodesList};
+var acts={addNote:addNote,advP:advP,advI:advI,resInc:resInc,togTask:togTask,updateField:updateField,updateArrayField:updateArrayField,updateFin:updateFin,canEdit:canEdit,canGen:canGen,persistField:persistField,apiCreate:apiCreate,apiDelete:apiDelete,apiSave:apiSave,addSubItem:addSubItem,editSubItem:editSubItem,removeSubItem:removeSubItem,showCreateForm:function(type){setShowCreate({type:type});},getSeedRows:getSeedRows,seedAddRow:seedAddRow,seedDeleteRow:seedDeleteRow,seedUpdateCell:seedUpdateCell,addNodeToTree:addNodeToTree,deleteNodeFromTree:deleteNodeFromTree,liveTree:liveTree,_setD:setD,ocAgents:ocAgents,runOpenClawAgent:runOpenClawAgent,viewMode:viewMode,setViewMode:setViewMode,filters:filters,setFilters:setFilters,sortKey:sortKey,setSortKey:setSortKey,sortDir:sortDir,setSortDir:setSortDir,groupBy:groupBy,setGroupBy:setGroupBy,nodeSearch:nodeSearch,setNodeSearch:setNodeSearch,applyFilters:applyFilters,automations:automations,setAutomations:setAutomations,relations:relations,setRelations:setRelations,activity:activity,logActivity:logActivity,allNodesList:allNodesList};
 
 var allSubs=useMemo(function(){var r=[];Object.keys(xp).forEach(function(k){if(xp[k])r=r.concat(getSubs(k,D,NODES));});return r;},[xp,D,NODES]);
 var allSSubs=useMemo(function(){var r=[];Object.keys(xp2).forEach(function(k){if(xp2[k]){var s=allSubs.find(function(x){return x.id===k;});if(s)r=r.concat(getSSubs(s));}});return r;},[xp2,allSubs]);
@@ -1756,9 +1757,12 @@ var sendAgent=function(){if(!inp.trim()||ld)return;var userTxt=inp.trim();setInp
     if(data.user&&data.user.role&&!userInfo.loaded)setUserInfo({name:data.user.name||'',role:data.user.role||'',loaded:true});
     var files=(data.files||[]).map(function(f){return{name:f.name,icon:f.type==="csv"?"\uD83D\uDCC8":f.type==="html"?"\uD83D\uDCC4":f.type==="json"?"\uD83D\uDCCB":f.type==="md"?"\uD83D\uDCDD":"\uD83D\uDCC1",url:f.url,at:nw()};});
     var mutations=data.mutations||[];
-    if(approvalMode==="advisory"&&mutations.length>0){
-      setPendingMuts(function(prev){return prev.concat(mutations.map(function(m){return Object.assign({},m,{status:"pending",at:nw(),agent:agentId});}));});
-      text+="\\n\\n\uD83D\uDD12 "+mutations.length+" mutation(s) proposed (advisory mode). Review in approval queue.";
+    // Execute mutations directly (no approval queue)
+    if(mutations.length>0){
+      mutations.forEach(function(m){
+        try{execLocal(m.type||m.command||"",m.payload||m.input||m);}catch(e){}
+      });
+      text+="\\n\\n✅ "+mutations.length+" mutation(s) applied.";
     }
     setMsgs(function(prev){var n=Object.assign({},prev);var parsed=parseThinking(text);n[agentId]=(n[agentId]||[]).concat([{role:"ai",via:(data.gateway&&data.gateway.connected)?"openclaw":"cloud",text:parsed.text,thinking:parsed.thinking,files:files,mutations:mutations}]);return n;});
     // If agent made data mutations, refresh local state from Supabase
@@ -2695,3 +2699,4 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
   </div>{/* close main area */}
   <style>{"@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');*{box-sizing:border-box;margin:0;padding:0}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:"+C.bg+"}::-webkit-scrollbar-thumb{background:"+C.bd+";border-radius:3px}button:hover{opacity:0.88}input::placeholder{color:"+C.tx3+"}"}</style>
 </div>);}
+

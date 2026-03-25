@@ -80,11 +80,6 @@ export function TopBar({ search, onSearchChange, searchResults, onSearchSelect, 
       {/* Settings */}
       <span onClick={onOpenSettings} style={{ cursor: 'pointer', fontSize: 14, color: C.tx3, padding: '2px 4px' }} title="Settings">⚙️</span>
 
-      {/* Approval mode */}
-      <div onClick={onToggleApproval} style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 3, cursor: 'pointer', background: approvalMode === 'execute' ? C.r + '15' : C.g + '15', border: '1px solid ' + (approvalMode === 'execute' ? C.r + '30' : C.g + '30') }}>
-        <span style={{ fontSize: 10, color: approvalMode === 'execute' ? C.r : C.g, fontWeight: 600 }}>{approvalMode === 'advisory' ? '🔒 Advisory' : '⚡ Execute'}</span>
-      </div>
-
       {/* User pill */}
       <div onClick={() => { if (authed) onLogout(); else onLogin() }} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 3, cursor: 'pointer', background: authed ? C.g + '15' : C.bg3, border: '1px solid ' + (authed ? C.g + '30' : C.bd) }}>
         <span style={{ fontSize: 12 }}>{authed ? '🔓' : '🔒'}</span>
