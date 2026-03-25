@@ -237,9 +237,7 @@ var R=1.8;return items.filter(Boolean).map(function(it,i){var a=(i/Math.max(item
 
 // ── FULL PAGES ──
 function MainPage({nid,D,files,onUpload,onRemove,acts}){var oI=D.incidents.filter(function(i){return i.status!=="resolved";}).length;var cr=D.tasks.filter(function(t){return t.pri==="critical"&&t.status!=="done";}).length;var am=Math.round(D.ss.reduce(function(a,s){return a+s.mat;},0)/D.ss.length);var ce=acts.canEdit;var addLog=function(t){if(acts.logActivity)acts.logActivity("edit","command","Command Center",t);};var setD=acts._setD;
-// Redirect "command" to "command-center" node
-if(nid==="command")nid="command-center";
-if(false&&nid==="command__old"){var risks=calcRisks(D);var depChains=D.deps||[];var pDead=D.pilotDeadlines||{};return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>DOGMA Command Center</div><div style={{fontSize:14,color:C.tx2,marginBottom:12}}>Executive overview — {dy()}</div>
+if(nid==="command"){var risks=calcRisks(D);var depChains=D.deps||[];var pDead=D.pilotDeadlines||{};return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>DOGMA Command Center</div><div style={{fontSize:14,color:C.tx2,marginBottom:12}}>Executive overview — {dy()}</div>
 
 {/* Metrics Dashboard — fully editable */}
 <MetricsDashboard
@@ -1974,7 +1972,7 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
     {/* Left Sidebar — NODE_TREE driven */}
     <div style={{width:220,minWidth:220,background:C.bg1,borderRight:"1px solid "+C.bd,overflowY:"auto",flexShrink:0,fontSize:12}}>
       {/* COMMAND node */}
-      <div onClick={function(){focusNode([0,0,0],24);setSel({level:"main",id:"command-center"});}} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",cursor:"pointer",borderBottom:"1px solid "+C.bd+"40",background:sel&&sel.id==="command-center"?C.gold+"12":"transparent"}} onMouseEnter={function(e){e.currentTarget.style.background=C.bg3;}} onMouseLeave={function(e){e.currentTarget.style.background=sel&&sel.id==="command-center"?C.gold+"12":"transparent";}}>
+      <div onClick={function(){focusNode([0,0,0],24);setSel({level:"main",id:"command"});}} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",cursor:"pointer",borderBottom:"1px solid "+C.bd+"40",background:sel&&sel.id==="command"?C.gold+"12":"transparent"}} onMouseEnter={function(e){e.currentTarget.style.background=C.bg3;}} onMouseLeave={function(e){e.currentTarget.style.background=sel&&sel.id==="command"?C.gold+"12":"transparent";}}>
         <div style={{width:10,height:10,borderRadius:"50%",background:"#C8A74B",flexShrink:0}}/>
         <span style={{fontWeight:700,color:C.gold,fontSize:13}}>DOGMA COMMAND</span>
       </div>
