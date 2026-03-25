@@ -238,25 +238,29 @@ var R=1.8;return items.filter(Boolean).map(function(it,i){var a=(i/Math.max(item
 function MainPage({nid,D,files,onUpload,onRemove,acts}){var oI=D.incidents.filter(function(i){return i.status!=="resolved";}).length;var cr=D.tasks.filter(function(t){return t.pri==="critical"&&t.status!=="done";}).length;var am=Math.round(D.ss.reduce(function(a,s){return a+s.mat;},0)/D.ss.length);
 if(nid==="command"){var risks=calcRisks(D);var depChains=D.deps||[];var pDead=D.pilotDeadlines||{};return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>DOGMA Command Center</div><div style={{fontSize:14,color:C.tx2,marginBottom:12}}>Executive overview — {dy()}</div>
 
-{/* Metrics Dashboard */}
+{/* Metrics Dashboard — fully editable */}
 <MetricsDashboard
   finance={D.fin}
   pilots={D.pilots.map(function(p){return{name:p.name,viab:p.viab,stage:p.stage,roi:p.roi||""};})}
   controlModules={[
-    {id:"m0",name:"M0 Safety",rate:"1-5kHz",status:"planned"},
-    {id:"m1",name:"M1 Pressure",rate:"500-1000Hz",status:"planned"},
-    {id:"m2",name:"M2 Force",rate:"200-500Hz",status:"planned"},
-    {id:"m3",name:"M3 Proprio",rate:"100-300Hz",status:"planned"},
-    {id:"m4",name:"M4 Vision",rate:"30Hz",status:"planned"},
-    {id:"m5",name:"M5 Fusion",rate:"60-120Hz",status:"planned"},
-    {id:"m6",name:"M6 Reflex",rate:"100-300Hz",status:"planned"},
-    {id:"m7",name:"M7 Policy",rate:"10-30Hz",status:"planned"},
-    {id:"m8",name:"M8 Language",rate:"0.5-5Hz",status:"planned"},
-    {id:"m9",name:"M9 Meta",rate:"0.1-1Hz",status:"planned"},
+    {id:"m0",name:"M0 Safety",rate:"1-5kHz",status:D._moduleStatus?D._moduleStatus.m0||"planned":"planned"},
+    {id:"m1",name:"M1 Pressure",rate:"500-1000Hz",status:D._moduleStatus?D._moduleStatus.m1||"planned":"planned"},
+    {id:"m2",name:"M2 Force",rate:"200-500Hz",status:D._moduleStatus?D._moduleStatus.m2||"planned":"planned"},
+    {id:"m3",name:"M3 Proprio",rate:"100-300Hz",status:D._moduleStatus?D._moduleStatus.m3||"planned":"planned"},
+    {id:"m4",name:"M4 Vision",rate:"30Hz",status:D._moduleStatus?D._moduleStatus.m4||"planned":"planned"},
+    {id:"m5",name:"M5 Fusion",rate:"60-120Hz",status:D._moduleStatus?D._moduleStatus.m5||"planned":"planned"},
+    {id:"m6",name:"M6 Reflex",rate:"100-300Hz",status:D._moduleStatus?D._moduleStatus.m6||"planned":"planned"},
+    {id:"m7",name:"M7 Policy",rate:"10-30Hz",status:D._moduleStatus?D._moduleStatus.m7||"planned":"planned"},
+    {id:"m8",name:"M8 Language",rate:"0.5-5Hz",status:D._moduleStatus?D._moduleStatus.m8||"planned":"planned"},
+    {id:"m9",name:"M9 Meta",rate:"0.1-1Hz",status:D._moduleStatus?D._moduleStatus.m9||"planned":"planned"},
   ]}
   subsystems={D.ss.map(function(s){return{name:s.name,maturity:s.mat,status:s.status};})}
   tasks={D.tasks.map(function(t){return{title:t.title,status:t.status,priority:t.pri,progress:t.pct||0};})}
   incidents={D.incidents.map(function(i){return{id:i.id,status:i.status,severity:i.sev};})}
+  canEdit={acts.canEdit}
+  onEditFinance={function(field,val){acts.updateFin(field,val);}}
+  onEditModule={function(id,field,val){setD(function(prev){var ms=Object.assign({},prev._moduleStatus||{});ms[id]=val;return Object.assign({},prev,{_moduleStatus:ms});});}}
+  onEditSubsystem={function(name,field,val){var idx=D.ss.findIndex(function(s){return s.name===name;});if(idx>=0)acts.updateField("ss",D.ss[idx].id,field,val);}}
 />
 
 {risks.length>0&&<div><Sec>Risk Alerts ({risks.length})</Sec>{risks.slice(0,8).map(function(r,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 8px",background:r.sev==="critical"?C.r+"08":C.a+"06",borderLeft:"3px solid "+(r.sev==="critical"?C.r:r.sev==="high"?C.a:C.b),borderRadius:3,marginBottom:3,fontSize:13}}>
@@ -1680,6 +1684,9 @@ var DATA_TOOLS=[
 {name:"update_node_data",description:"Update a field in a node's data row",input_schema:{type:"object",properties:{node_id:{type:"string"},row_id:{type:"string"},field:{type:"string"},value:{type:"string"}},required:["node_id","row_id","field","value"]}},
 {name:"add_node_row",description:"Add a new data row to a node",input_schema:{type:"object",properties:{node_id:{type:"string"},name:{type:"string"},description:{type:"string"},status:{type:"string"},criticality:{type:"string"}},required:["node_id","name"]}},
 {name:"delete_node_row",description:"Delete a data row from a node",input_schema:{type:"object",properties:{node_id:{type:"string"},row_id:{type:"string"}},required:["node_id","row_id"]}},
+{name:"update_finance",description:"Update a financial metric (burn, cash, runway, bom)",input_schema:{type:"object",properties:{field:{type:"string",enum:["burn","cash","runway","bom"]},value:{type:"string"}},required:["field","value"]}},
+{name:"update_module_status",description:"Update a control module M0-M9 status",input_schema:{type:"object",properties:{module_id:{type:"string",enum:["m0","m1","m2","m3","m4","m5","m6","m7","m8","m9"]},status:{type:"string",enum:["planned","active","testing","blocked","done"]}},required:["module_id","status"]}},
+{name:"update_subsystem",description:"Update a subsystem field (maturity, status)",input_schema:{type:"object",properties:{name:{type:"string"},field:{type:"string"},value:{type:"string"}},required:["name","field","value"]}},
 ];
 // File tools (always available to everyone)
 var FILE_TOOLS=[
@@ -1724,6 +1731,29 @@ var execLocal=function(name,input){
     acts.seedDeleteRow(input.node_id,input.row_id);
     acts.logActivity("delete",input.node_id,"","Agent deleted row");
     return"Deleted row "+input.row_id;
+  }
+  // Command center finance edits
+  if(name==="update_finance"){
+    if(!canEdit)return"DENIED: Not authenticated";
+    acts.updateFin(input.field,parseFloat(input.value)||0);
+    acts.logActivity("edit","command","Command Center","Agent updated finance."+input.field+"="+input.value);
+    return"Updated finance."+input.field+"="+input.value;
+  }
+  // Control module status
+  if(name==="update_module_status"){
+    if(!canEdit)return"DENIED: Not authenticated";
+    setD(function(prev){var ms=Object.assign({},prev._moduleStatus||{});ms[input.module_id]=input.status;return Object.assign({},prev,{_moduleStatus:ms});});
+    acts.logActivity("edit","command","Command Center","Agent updated "+input.module_id+" status="+input.status);
+    return"Updated "+input.module_id+" to "+input.status;
+  }
+  // Subsystem maturity
+  if(name==="update_subsystem"){
+    if(!canEdit)return"DENIED: Not authenticated";
+    var ssIdx=D.ss.findIndex(function(s){return s.name===input.name||s.id===input.id;});
+    if(ssIdx<0)return"Subsystem not found: "+input.name;
+    acts.updateField("ss",D.ss[ssIdx].id,input.field||"mat",parseFloat(input.value)||0);
+    acts.logActivity("edit","command","Command Center","Agent updated "+input.name+"."+input.field+"="+input.value);
+    return"Updated subsystem "+input.name;
   }
   return"OK";
 };
