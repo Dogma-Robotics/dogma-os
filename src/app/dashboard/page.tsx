@@ -1435,7 +1435,40 @@ var _createForm=useState({}),createForm=_createForm[0],setCreateForm=_createForm
 // ── Create Form component ──
 // CreateForm removed — now inline JSX in the render
 
-var onUpload=function(nodeId,file){setFiles(function(prev){var n=Object.assign({},prev);n[nodeId]=(n[nodeId]||[]).concat([file]);return n;});};
+var onUpload=function(nodeId,file){setFiles(function(prev){var n=Object.assign({},prev);var existing=n[nodeId]||[];// Avoid duplicates by name
+  if(existing.some(function(f){return f.name===file.name;}))return prev;n[nodeId]=existing.concat([file]);return n;});};
+// Load OpenClaw memory files and merge into files state
+var _ocMemoryLoaded=useState(false),ocMemoryLoaded=_ocMemoryLoaded[0],setOcMemoryLoaded=_ocMemoryLoaded[1];
+useEffect(function(){
+  if(ocMemoryLoaded)return;
+  fetch("/api/openclaw-memory").then(function(r){return r.json();}).then(function(data){
+    if(!data.files)return;
+    var byNode={};
+    data.files.forEach(function(f){
+      // Parse node-{id}--{filename} pattern
+      var match=f.name.match(/^node-([^-]+(?:-[^-]+)*)--(.+)$/);
+      if(match){
+        var nodeId=match[1];var fileName=match[2];
+        // Skip .context.md summary files
+        if(fileName.endsWith(".context.md"))return;
+        if(!byNode[nodeId])byNode[nodeId]=[];
+        byNode[nodeId].push({name:fileName,size:0,type:"",data:null,at:"OpenClaw memory",savedToMemory:true,memoryFile:f.name});
+      }
+    });
+    if(Object.keys(byNode).length>0){
+      setFiles(function(prev){
+        var merged=Object.assign({},prev);
+        Object.keys(byNode).forEach(function(nid){
+          var existing=merged[nid]||[];
+          var newFiles=byNode[nid].filter(function(nf){return!existing.some(function(ef){return ef.name===nf.name;});});
+          if(newFiles.length>0)merged[nid]=existing.concat(newFiles);
+        });
+        return merged;
+      });
+    }
+    setOcMemoryLoaded(true);
+  }).catch(function(){setOcMemoryLoaded(true);});
+},[ocMemoryLoaded]);
 var onRemove=function(nodeId,idx){setFiles(function(prev){var n=Object.assign({},prev);var arr=(n[nodeId]||[]).slice();arr.splice(idx,1);n[nodeId]=arr;return n;});};
 
 var addLog=useCallback(function(t){setD(function(d){return Object.assign({},d,{log:[{t:t,at:nw(),by:userName||"system"}].concat(d.log)});});},[userName]);
