@@ -263,6 +263,7 @@ if(nid==="command"){var risks=calcRisks(D);var depChains=D.deps||[];var pDead=D.
   onEditSubsystem={function(name,field,val){var idx=D.ss.findIndex(function(s){return s.name===name;});if(idx>=0)acts.updateField("ss",D.ss[idx].id,field,val);}}
 />
 
+{/* Editable Risk Alerts */}
 {risks.length>0&&<div><Sec>Risk Alerts ({risks.length})</Sec>{risks.slice(0,8).map(function(r,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 8px",background:r.sev==="critical"?C.r+"08":C.a+"06",borderLeft:"3px solid "+(r.sev==="critical"?C.r:r.sev==="high"?C.a:C.b),borderRadius:3,marginBottom:3,fontSize:13}}>
 <Tag color={r.sev==="critical"?C.r:r.sev==="high"?C.a:C.b}>{r.sev}</Tag>
 <Tag>{r.cat}</Tag>
@@ -270,197 +271,62 @@ if(nid==="command"){var risks=calcRisks(D);var depChains=D.deps||[];var pDead=D.
 <span style={{fontFamily:"'JetBrains Mono',monospace",color:C.tx3,fontSize:11}}>S{r.score}</span>
 </div>;})}</div>}
 
-<Sec>Dependency Chain</Sec>
-<div style={{fontSize:12,color:C.tx3,marginBottom:6}}>Causal blockers — resolving upstream unblocks downstream</div>
-{depChains.map(function(dep,i){return <div key={i} style={{padding:"6px 8px",background:C.bg,borderRadius:3,marginBottom:4,borderLeft:"3px solid "+C.a}}>
-<div style={{display:"flex",alignItems:"center",gap:6,fontSize:13}}>
-<span style={{color:C.r,fontWeight:600}}>{dep.fromLabel}</span>
-<span style={{color:C.tx3}}>{"\u2192"}</span>
-<span style={{color:C.a}}>blocks</span>
-<span style={{color:C.tx}}>{dep.blocks.join(", ")}</span>
-</div>
-<div style={{fontSize:11,color:C.tx2,marginTop:2}}>{dep.reason}</div>
+{/* Editable Dependency Chains */}
+<Sec>Dependency Chain {ce&&<span onClick={function(){var from=prompt("Blocker label:");var blocks=prompt("What it blocks (comma-separated):");var reason=prompt("Reason:");if(from&&blocks){setD(function(prev){return Object.assign({},prev,{deps:(prev.deps||[]).concat([{from:"custom_"+Date.now(),fromLabel:from,blocks:blocks.split(",").map(function(s){return s.trim();}),reason:reason||""}])});});}}} style={{color:C.gold,cursor:"pointer",fontSize:11,fontWeight:400,marginLeft:8}}>+ Add</span>}</Sec>
+{depChains.map(function(dep,i){return <div key={i} style={{padding:"6px 8px",background:C.bg,borderRadius:3,marginBottom:4,borderLeft:"3px solid "+C.a,display:"flex",alignItems:"center",gap:6}}>
+<div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:6,fontSize:13}}>
+<span style={{color:C.r,fontWeight:600}}>{dep.fromLabel}</span><span style={{color:C.tx3}}>→</span><span style={{color:C.a}}>blocks</span><span style={{color:C.tx}}>{dep.blocks.join(", ")}</span></div>
+<div style={{fontSize:11,color:C.tx2,marginTop:2}}>{dep.reason}</div></div>
+{ce&&<span onClick={function(){setD(function(prev){return Object.assign({},prev,{deps:(prev.deps||[]).filter(function(_,j){return j!==i;})});});}} style={{cursor:"pointer",color:C.r,fontSize:10}}>x</span>}
 </div>;})}
 
-<Sec>Pilot Timeline vs Runway</Sec>
-<div style={{fontSize:12,color:C.tx3,marginBottom:6}}>Runway exhausts ~{new Date(Date.now()+D.fin.runway*30*86400000).toLocaleDateString("en-US",{month:"short",day:"numeric"})}. Pilots must close before.</div>
-{D.pilots.map(function(p,i){var dl=pDead[p.id];return <div key={i} style={{padding:"5px 8px",background:C.bg,borderRadius:3,marginBottom:3,borderLeft:"3px solid "+(dl&&dl.needBy?"#A78530":C.bd)}}>
+{/* Editable Pilots */}
+<Sec>Pilot Pipeline {ce&&<span onClick={function(){var name=prompt("Pilot company name:");if(!name)return;setD(function(prev){return Object.assign({},prev,{pilots:prev.pilots.concat([{id:"p_"+Date.now(),name:name,stage:"Identified",viab:0,roi:"",champ:"",champStr:"None",plant:"",plc:"",pain:"",skills:[],comp:[],risk:"medium",qs:[],nextStep:"",fu:"",meetings:[],blockers:[],notes:[]}])});});}} style={{color:C.gold,cursor:"pointer",fontSize:11,fontWeight:400,marginLeft:8}}>+ Add</span>}</Sec>
+{D.pilots.map(function(p,i){var dl=pDead[p.id];return <div key={i} style={{padding:"5px 8px",background:C.bg,borderRadius:3,marginBottom:3,borderLeft:"3px solid "+(dl&&dl.needBy?C.a:C.bd)}}>
 <div style={{display:"flex",alignItems:"center",gap:6,fontSize:13}}>
 <span style={{fontWeight:600}}>{p.name}</span>
 <Tag color={C.gold}>{p.stage}</Tag>
-<span style={{color:C.tx2}}>{p.viab}%</span>
-{dl&&<span style={{fontFamily:"'JetBrains Mono',monospace",color:C.a,fontSize:12}}>Need by: {dl.needBy}</span>}
-</div>
-{dl&&<div style={{fontSize:11,color:C.tx2,marginTop:2}}>{dl.reason}</div>}
-{dl&&dl.gatedBy&&<div style={{fontSize:11,color:C.tx3}}>Gated by: {dl.gatedBy.join(", ")}</div>}
+<Row label="Viab" value={p.viab+"%"} canEdit={ce} onSave={function(v){acts.updateField("pilots",p.id,"viab",parseInt(v)||0);}}/>
+{ce&&<span onClick={function(){var s=prompt("New stage:",p.stage);if(s)acts.updateField("pilots",p.id,"stage",s);}} style={{cursor:"pointer",color:C.gold,fontSize:9}}>✏️</span>}
+{ce&&<span onClick={function(){setD(function(prev){return Object.assign({},prev,{pilots:prev.pilots.filter(function(_,j){return j!==i;})});});}} style={{cursor:"pointer",color:C.r,fontSize:9}}>x</span>}
+</div></div>;})}
+
+{/* Editable Incidents */}
+<Sec>Incidents {ce&&<span onClick={function(){var desc=prompt("Incident description:");var sev=prompt("Severity (low/medium/high/critical):","medium");if(desc){acts.addNote&&setD(function(prev){var nid2=prev.seq.inc+1;return Object.assign({},prev,{incidents:prev.incidents.concat([{id:"INC-"+nid2,sev:sev||"medium",desc:desc,down:"",root:"",status:"open",reported:nw(),notes:[],acts:[],timeline:[]}]),seq:Object.assign({},prev.seq,{inc:nid2})});});}}} style={{color:C.gold,cursor:"pointer",fontSize:11,fontWeight:400,marginLeft:8}}>+ Add</span>}</Sec>
+{D.incidents.map(function(inc,i){return <div key={i} style={{padding:"5px 8px",background:C.bg,borderRadius:3,marginBottom:3,borderLeft:"3px solid "+(inc.status==="resolved"?C.g:C.r),display:"flex",alignItems:"center",gap:6,fontSize:12}}>
+<Tag color={dc(inc.sev)}>{inc.sev}</Tag>
+<Tag color={dc(inc.status)}>{inc.status}</Tag>
+<span style={{flex:1,color:C.tx}}>{inc.desc.slice(0,50)}</span>
+{ce&&inc.status!=="resolved"&&<span onClick={function(){acts.updateField("incidents",inc.id,"status","resolved");}} style={{cursor:"pointer",color:C.g,fontSize:9,padding:"2px 6px",border:"1px solid "+C.g+"30",borderRadius:2}}>Resolve</span>}
+{ce&&<span onClick={function(){var s=prompt("Severity:",inc.sev);if(s)acts.updateField("incidents",inc.id,"sev",s);}} style={{cursor:"pointer",color:C.tx3,fontSize:9}}>✏️</span>}
+{ce&&<span onClick={function(){setD(function(prev){return Object.assign({},prev,{incidents:prev.incidents.filter(function(_,j){return j!==i;})});});}} style={{cursor:"pointer",color:C.r,fontSize:9}}>x</span>}
 </div>;})}
 
-<Sec>Incident Links</Sec>
-{Object.keys(D.incLinks||{}).map(function(iid,i){var lk=D.incLinks[iid];var inc=D.incidents.find(function(x){return x.id===iid;});if(!inc||inc.status==="resolved")return null;return <div key={i} style={{padding:"5px 8px",background:C.bg,borderRadius:3,marginBottom:3,borderLeft:"3px solid "+C.r,fontSize:13}}>
-<span style={{color:C.r,fontWeight:600}}>{iid}</span> <span style={{color:C.tx}}>{lk.desc}</span>
-<div style={{fontSize:11,color:C.tx3,marginTop:2}}>Links: {lk.ss.length>0?"SS:"+lk.ss.join(",")+" ":""}{lk.tasks.length>0?"Tasks:"+lk.tasks.join(",")+" ":""}{lk.fleet.length>0?"Fleet:"+lk.fleet.join(","):""}</div>
+{/* Editable Tasks */}
+<Sec>Tasks {ce&&<span onClick={function(){var title=prompt("Task title:");if(!title)return;var pri=prompt("Priority:","medium")||"medium";acts.apiCreate&&acts.apiCreate("tasks",{title:title,pri:pri});}} style={{color:C.gold,cursor:"pointer",fontSize:11,fontWeight:400,marginLeft:8}}>+ Add</span>}</Sec>
+{D.tasks.slice(0,8).map(function(t,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",fontSize:12,borderBottom:"1px solid "+C.bd+"20"}}>
+<Dot s={t.status}/><span style={{flex:1}}>{t.title}</span>
+<Tag color={dc(t.pri)}>{t.pri}</Tag>
+<PB val={t.pct||0} w={40}/>
+<span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:C.tx3}}>{t.pct||0}%</span>
+{ce&&<span onClick={function(){var v=prompt("Progress %:",String(t.pct||0));if(v!==null)acts.updateField("tasks",t.id,"pct",parseInt(v)||0);}} style={{cursor:"pointer",color:C.tx3,fontSize:9}}>✏️</span>}
+{ce&&<span onClick={function(){setD(function(prev){return Object.assign({},prev,{tasks:prev.tasks.filter(function(_,j){return j!==i;})});});}} style={{cursor:"pointer",color:C.r,fontSize:9}}>x</span>}
 </div>;})}
 
-<Sec>Critical Path & Dependency Graph</Sec>
-<div style={{fontSize:11,color:C.tx3,marginBottom:8}}>What blocks what — resolve upstream to unblock downstream</div>
-<div style={{background:C.bg,borderRadius:6,padding:10,border:"1px solid "+C.bd}}>
-{(D.deps||[]).map(function(dep,i){
-  var fromColor=dep.fromLabel.indexOf("INC")>=0?C.r:dep.fromLabel.indexOf("ISO")>=0||dep.fromLabel.indexOf("safety")>=0?C.a:C.b;
-  return <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",borderBottom:i<(D.deps||[]).length-1?"1px solid "+C.bd+"30":"none",fontSize:11}}>
-    <div style={{minWidth:100,display:"flex",alignItems:"center",gap:3}}>
-      <div style={{width:6,height:6,borderRadius:"50%",background:fromColor,flexShrink:0}}/>
-      <span style={{color:fromColor,fontFamily:"'JetBrains Mono',monospace",fontWeight:600,fontSize:10}}>{dep.fromLabel.split(" ")[0]}</span>
-    </div>
-    <span style={{color:C.r}}>→</span>
-    <div style={{display:"flex",flexWrap:"wrap",gap:2,flex:1}}>
-      {dep.blocks.map(function(b,j){return <span key={j} style={{padding:"1px 5px",fontSize:9,borderRadius:3,background:C.a+"12",color:C.a,border:"1px solid "+C.a+"25",fontFamily:"'JetBrains Mono',monospace"}}>{b}</span>;})}
-    </div>
-    <span style={{fontSize:9,color:C.tx3,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{dep.reason}</span>
-  </div>;
-})}
-</div>
-<div style={{marginTop:6,fontSize:10,color:C.tx3}}>
-  <span style={{color:C.r}}>●</span> Incidents &nbsp;
-  <span style={{color:C.a}}>●</span> Safety &nbsp;
-  <span style={{color:C.b}}>●</span> Technical
-</div>
-<Sec>Recent Activity</Sec>{D.log.map(function(l,i){return <div key={i} style={{fontSize:13,color:C.tx2,padding:"2px 0"}}>{l.t} <span style={{color:C.tx3}}>{l.at}</span>{l.by&&<span style={{color:C.gold,fontSize:10,marginLeft:4}}>— {l.by}</span>}</div>;})}
-
-{/* ═══ FOUNDER DAILY BRIEF ═══ */}
-<Sec>🌅 Founder Daily Brief</Sec>
-<div style={{background:C.bg,borderRadius:6,padding:12,marginBottom:12,border:"1px solid "+C.gold+"20"}}>
-{(function(){
-  var blocked=D.tasks.filter(function(t){return t.status==="blocked";});
-  var critical=D.tasks.filter(function(t){return t.pri==="critical"&&t.status!=="done";});
-  var overdue=D.tasks.filter(function(t){return t.due&&t.status!=="done";});
-  var openInc=D.incidents.filter(function(i){return i.status!=="resolved";});
-  var staleInv=D.investors.filter(function(v){return v.stage==="Researched"||v.stage==="Warm Intro";});
-  var failedExp=D.exps.filter(function(e){return e.outcome==="fail"||e.outcome==="partial";}).slice(0,3);
-  var pilotFU=D.pilots.filter(function(p){return p.nextStep;});
-  var items=[];
-  if(critical.length>0)items.push({icon:"🔴",text:critical.length+" critical task"+(critical.length>1?"s":"")+": "+critical.map(function(t){return t.title.slice(0,30);}).join(", "),color:C.r});
-  if(blocked.length>0)items.push({icon:"🚫",text:blocked.length+" blocked: "+blocked.map(function(t){return t.title.slice(0,25);}).join(", "),color:C.a});
-  if(openInc.length>0)items.push({icon:"⚠️",text:openInc.length+" open incident"+(openInc.length>1?"s":"")+": "+openInc.map(function(i){return i.id;}).join(", "),color:C.r});
-  if(failedExp.length>0)items.push({icon:"🔬",text:"Recent failed/partial experiments: "+failedExp.map(function(e){return e.id;}).join(", "),color:C.a});
-  if(pilotFU.length>0)items.push({icon:"🏭",text:"Pilots needing follow-up: "+pilotFU.map(function(p){return p.name.split(" ")[0];}).join(", "),color:C.gold});
-  if(staleInv.length>0)items.push({icon:"💰",text:staleInv.length+" investor"+(staleInv.length>1?"s":"")+" in early stage — push forward",color:C.a});
-  if(D.fin.runway<4)items.push({icon:"💸",text:"Runway "+D.fin.runway+"mo — fundraising is urgent",color:C.r});
-  if(items.length===0)items.push({icon:"✅",text:"All clear — no critical blockers today",color:C.g});
-  return items.map(function(it,i){return <div key={i} style={{display:"flex",gap:8,padding:"4px 0",fontSize:12,alignItems:"flex-start"}}>
-    <span>{it.icon}</span><span style={{color:it.color}}>{it.text}</span>
-  </div>;});
-})()}
-</div>
-
-{/* ═══ RISK ENGINE ═══ */}
-<Sec>🚨 Risk Engine</Sec>
-<div style={{background:C.bg,borderRadius:6,padding:10,marginBottom:12,border:"1px solid "+C.bd}}>
-{(function(){
-  var risks=[];
-  // Subsystem risks
-  D.ss.forEach(function(s){if(s.mat<50)risks.push({area:"Subsystem",entity:s.name,level:s.mat<30?"critical":s.mat<40?"high":"medium",reason:"Maturity "+s.mat+"% — needs iteration",score:100-s.mat});});
-  // Pilot risks
-  D.pilots.forEach(function(p){if(p.blockers&&p.blockers.length>0)risks.push({area:"Pilot",entity:p.name,level:"high",reason:p.blockers[0].slice(0,50),score:70});});
-  // Safety risks
-  D.safety.forEach(function(s){if(s.cov<60)risks.push({area:"Safety",entity:s.name,level:s.cov<40?"critical":"high",reason:"Coverage "+s.cov+"% — gaps remain",score:100-s.cov});});
-  // Supply risks
-  D.supply.forEach(function(s){if(s.risk==="high")risks.push({area:"Supply",entity:s.item,level:"high",reason:s.note?s.note.slice(0,50):"High risk supplier",score:75});});
-  // Runway
-  if(D.fin.runway<3)risks.push({area:"Finance",entity:"Runway",level:"critical",reason:D.fin.runway+"mo remaining — raise urgently",score:95});
-  else if(D.fin.runway<6)risks.push({area:"Finance",entity:"Runway",level:"high",reason:D.fin.runway+"mo remaining",score:70});
-  // Milestones
-  D.milestones.forEach(function(m){if(m.risk==="critical"||m.risk==="high")risks.push({area:"Milestone",entity:m.title.slice(0,30),level:m.risk,reason:m.blockers&&m.blockers[0]?m.blockers[0].slice(0,40):"At risk",score:m.risk==="critical"?85:65});});
-  risks.sort(function(a,b){return b.score-a.score;});
-  var levelColor={"critical":C.r,"high":C.a,"medium":C.gold,"low":C.g};
-  return risks.slice(0,10).map(function(r,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",fontSize:11,borderBottom:"1px solid "+C.bd+"20"}}>
-    <div style={{width:6,height:6,borderRadius:"50%",background:levelColor[r.level]||C.a,flexShrink:0}}/>
-    <Tag color={levelColor[r.level]}>{r.level}</Tag>
-    <span style={{color:C.tx3,minWidth:55}}>{r.area}</span>
-    <span style={{color:C.tx,fontWeight:500,flex:1}}>{r.entity}</span>
-    <span style={{color:C.tx3,fontSize:10,maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.reason}</span>
-  </div>;});
-})()}
-</div>
-
-{/* ═══ READINESS SCORES ═══ */}
-<Sec>📊 Subsystem Readiness</Sec>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:12}}>
-{D.ss.map(function(s,i){
-  var stage=s.mat>=80?"deployable":s.mat>=65?"robust":s.mat>=50?"tested":s.mat>=30?"prototype":"concept";
-  var stageColor={"deployable":C.g,"robust":"#3B9","tested":C.a,"prototype":C.gold,"concept":C.r};
-  return <div key={i} style={{background:C.bg,borderRadius:4,padding:"6px 8px",borderLeft:"3px solid "+(stageColor[stage]||C.tx3)}}>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-      <span style={{fontSize:11,fontWeight:600,color:C.tx}}>{s.name}</span>
-      <span style={{fontSize:14,fontWeight:700,color:stageColor[stage],fontFamily:"'JetBrains Mono',monospace"}}>{s.mat}%</span>
-    </div>
-    <div style={{fontSize:9,color:stageColor[stage],textTransform:"uppercase",letterSpacing:"0.06em",marginTop:1}}>{stage}</div>
-    <div style={{height:3,background:C.bd,borderRadius:2,marginTop:3,overflow:"hidden"}}><div style={{width:s.mat+"%",height:"100%",background:stageColor[stage],borderRadius:2}}/></div>
-  </div>;
-})}
-</div>
-
-{/* ═══ OPPORTUNITY COMPARISON ═══ */}
-<Sec>🏭 Pilot Comparison Board</Sec>
-<div style={{overflowX:"auto",marginBottom:12}}>
-<div style={{display:"grid",gridTemplateColumns:"100px"+D.pilots.map(function(){return" 1fr";}).join(""),gap:0,fontSize:10,minWidth:D.pilots.length*120+100}}>
-  <div style={{padding:4,fontWeight:700,color:C.tx3}}></div>
-  {D.pilots.map(function(p,i){return <div key={i} style={{padding:4,fontWeight:700,color:C.gold,textAlign:"center",borderBottom:"2px solid "+C.gold+"30"}}>{p.name.split(" ")[0]}</div>;})}
-  {["ROI","Viability","Champion","Risk","Stage","Blockers"].map(function(metric){
-    return [<div key={metric} style={{padding:"3px 4px",color:C.tx3,fontWeight:600,borderBottom:"1px solid "+C.bd+"20"}}>{metric}</div>].concat(
-      D.pilots.map(function(p,i){
-        var val=metric==="ROI"?p.roi:metric==="Viability"?p.viab+"%":metric==="Champion"?p.champStr:metric==="Risk"?p.risk:metric==="Stage"?p.stage:metric==="Blockers"?(p.blockers||[]).length+"":"";
-        var clr=metric==="Risk"?(p.risk==="high"?C.r:p.risk==="low"?C.g:C.a):metric==="Viability"?(p.viab>80?C.g:p.viab>60?C.a:C.r):metric==="Champion"?(p.champStr==="Strong"?C.g:p.champStr==="Medium"?C.a:C.r):C.tx2;
-        return <div key={i} style={{padding:"3px 4px",textAlign:"center",color:clr,borderBottom:"1px solid "+C.bd+"20",fontFamily:metric==="ROI"||metric==="Viability"?"'JetBrains Mono',monospace":"inherit"}}>{val}</div>;
-      })
-    );
-  })}
-</div>
-</div>
-
-{/* ═══ DECISION JOURNAL + THESIS TRACKER ═══ */}
-<Sec>📖 Decision Journal & Strategic Theses</Sec>
-{D.decisions.map(function(d,i){return <div key={i} style={{padding:"6px 0",borderBottom:"1px solid "+C.bd+"30"}}>
-  <div style={{display:"flex",gap:6,alignItems:"center"}}>
-    <span style={{fontSize:12,fontWeight:700,color:C.gold}}>{d.title}</span>
-    <span style={{fontSize:10,color:C.tx3,fontFamily:"'JetBrains Mono',monospace"}}>{d.date}</span>
-  </div>
-  <div style={{fontSize:11,color:C.tx2,marginTop:2,paddingLeft:8,borderLeft:"2px solid "+C.gold+"30"}}>{d.why}</div>
+{/* Editable Decisions */}
+<Sec>📖 Decisions {ce&&<span onClick={function(){var title=prompt("Decision title:");if(!title)return;var why=prompt("Rationale:")||"";addLog("Decision: "+title);}} style={{color:C.gold,cursor:"pointer",fontSize:11,fontWeight:400,marginLeft:8}}>+ Add</span>}</Sec>
+{(D.decisions||[]).map(function(d,i){return <div key={i} style={{padding:"6px 0",borderBottom:"1px solid "+C.bd+"30",display:"flex",alignItems:"center",gap:6}}>
+<div style={{flex:1}}><div style={{display:"flex",gap:6,alignItems:"center"}}><span style={{fontSize:12,fontWeight:700,color:C.gold}}>{d.title}</span><span style={{fontSize:10,color:C.tx3,fontFamily:"'JetBrains Mono',monospace"}}>{d.date}</span></div>
+<div style={{fontSize:11,color:C.tx2,marginTop:2,paddingLeft:8,borderLeft:"2px solid "+C.gold+"30"}}>{d.why}</div></div>
+{ce&&<span onClick={function(){setD(function(prev){return Object.assign({},prev,{decisions:(prev.decisions||[]).filter(function(_,j){return j!==i;})});});}} style={{cursor:"pointer",color:C.r,fontSize:10}}>x</span>}
 </div>;})}
-<div style={{marginTop:8,fontSize:10,color:C.tx3}}>💡 Decisions become your strategic memory. Add more via agents or CRUD.</div>
 
-{/* ═══ ROM / COST ESTIMATOR ═══ */}
-<Sec>💵 Quick ROM Estimator</Sec>
-<div style={{background:C.bg,borderRadius:6,padding:10,marginBottom:12,border:"1px solid "+C.bd}}>
-{[
-  {item:"Single Genesis Hand unit",cost:"$"+((D.fin.bom||4280)/1000).toFixed(1)+"K",time:"2 weeks assembly"},
-  {item:"Pilot deployment (1 unit + integration)",cost:"$"+(((D.fin.bom||4280)+8000)/1000).toFixed(0)+"K",time:"4-6 weeks"},
-  {item:"Scale to 3 units",cost:"$"+((D.fin.bom||4280)*2.5/1000).toFixed(0)+"K",time:"6-8 weeks"},
-  {item:"New hardware iteration",cost:"$"+((D.fin.bom||4280)*0.3/1000).toFixed(1)+"K",time:"1-2 weeks"},
-  {item:"External arm integration",cost:"~$5K",time:"2-3 weeks"},
-  {item:"Full safety certification",cost:"~$15-25K",time:"2-3 months"},
-].map(function(r,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"3px 0",fontSize:11,borderBottom:i<5?"1px solid "+C.bd+"20":"none"}}>
-  <span style={{flex:1,color:C.tx}}>{r.item}</span>
-  <span style={{color:C.gold,fontWeight:600,fontFamily:"'JetBrains Mono',monospace",minWidth:50,textAlign:"right"}}>{r.cost}</span>
-  <span style={{color:C.tx3,fontSize:10,minWidth:80,textAlign:"right"}}>{r.time}</span>
+{/* Recent Activity — editable log */}
+<Sec>Recent Activity {ce&&<span onClick={function(){var t=prompt("Log entry:");if(t)addLog(t);}} style={{color:C.gold,cursor:"pointer",fontSize:11,fontWeight:400,marginLeft:8}}>+ Add</span>}</Sec>
+{D.log.slice(0,10).map(function(l,i){return <div key={i} style={{fontSize:12,color:C.tx2,padding:"2px 0",display:"flex",alignItems:"center",gap:4}}>
+<span style={{flex:1}}>{l.t} <span style={{color:C.tx3}}>{l.at}</span>{l.by&&<span style={{color:C.gold,fontSize:10,marginLeft:4}}>— {l.by}</span>}</span>
+{ce&&<span onClick={function(){setD(function(prev){return Object.assign({},prev,{log:prev.log.filter(function(_,j){return j!==i;})});});}} style={{cursor:"pointer",color:C.r,fontSize:9}}>x</span>}
 </div>;})}
-</div>
-
-{/* ═══ INCIDENT POSTMORTEMS ═══ */}
-<Sec>🔍 Incident Postmortems</Sec>
-{D.incidents.filter(function(i){return i.status==="resolved";}).map(function(inc,i){
-  return <div key={i} style={{background:C.bg,borderRadius:4,padding:8,marginBottom:6,borderLeft:"3px solid "+C.g}}>
-    <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:3}}>
-      <span style={{fontFamily:"'JetBrains Mono',monospace",color:C.g,fontWeight:700,fontSize:11}}>{inc.id}</span>
-      <Tag color={C.g}>RESOLVED</Tag>
-      <span style={{flex:1,fontSize:11,color:C.tx}}>{inc.desc.slice(0,40)}</span>
-    </div>
-    <div style={{fontSize:10}}>
-      {inc.root&&<div style={{color:C.a,marginBottom:1}}>Root cause: {inc.root.slice(0,60)}</div>}
-      {inc.acts&&inc.acts.length>0&&<div style={{color:C.tx2}}>Prevention: {inc.acts[inc.acts.length-1].slice(0,60)}</div>}
-    </div>
-  </div>;
-})}
-{D.incidents.filter(function(i){return i.status==="resolved";}).length===0&&<div style={{fontSize:11,color:C.tx3}}>No resolved incidents yet</div>}
 
 <FileUpload nodeId={nid} nodeName={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
 if(nid==="rd")return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Research & Development</div><Row label="Avg Maturity" value={am+"%"} color={am>60?C.g:C.a}/><Row label="Total Issues" value={D.ss.reduce(function(a,s){return a+s.issues;},0)}/><Row label="Skills Validated" value={D.skills.filter(function(s){return s.status==="validated";}).length+"/"+D.skills.length}/><Sec>Subsystems ({D.ss.length})</Sec>{D.ss.map(function(s,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",fontSize:14,borderBottom:"1px solid "+C.bd+"30"}}><Dot s={s.status}/><span style={{flex:1}}>{s.name}</span><PB val={s.mat} w={50}/><span style={{fontFamily:"'JetBrains Mono',monospace",color:C.tx2,minWidth:35}}>{s.mat}%</span><Tag>{s.ver}</Tag></div>;})}<Sec>Skills ({D.skills.length})</Sec>{D.skills.map(function(s,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",fontSize:14,borderBottom:"1px solid "+C.bd+"30"}}><Dot s={s.status}/><span style={{flex:1}}>{s.name}</span><span style={{fontFamily:"'JetBrains Mono',monospace",color:s.success>80?C.g:s.success>60?C.a:C.r}}>{s.success}%</span><span style={{fontSize:11,color:C.tx3}}>{s.tests} tests</span></div>;})}<Sec>📡 Live View Layers</Sec>
@@ -1687,6 +1553,15 @@ var DATA_TOOLS=[
 {name:"update_finance",description:"Update a financial metric (burn, cash, runway, bom)",input_schema:{type:"object",properties:{field:{type:"string",enum:["burn","cash","runway","bom"]},value:{type:"string"}},required:["field","value"]}},
 {name:"update_module_status",description:"Update a control module M0-M9 status",input_schema:{type:"object",properties:{module_id:{type:"string",enum:["m0","m1","m2","m3","m4","m5","m6","m7","m8","m9"]},status:{type:"string",enum:["planned","active","testing","blocked","done"]}},required:["module_id","status"]}},
 {name:"update_subsystem",description:"Update a subsystem field (maturity, status)",input_schema:{type:"object",properties:{name:{type:"string"},field:{type:"string"},value:{type:"string"}},required:["name","field","value"]}},
+{name:"update_pilot",description:"Update a pilot field",input_schema:{type:"object",properties:{name:{type:"string"},field:{type:"string"},value:{type:"string"}},required:["name","field","value"]}},
+{name:"add_pilot",description:"Add a new pilot",input_schema:{type:"object",properties:{name:{type:"string"},stage:{type:"string"},viab:{type:"string"},roi:{type:"string"},risk:{type:"string"}},required:["name"]}},
+{name:"add_incident",description:"Create a new incident",input_schema:{type:"object",properties:{description:{type:"string"},severity:{type:"string"},root_cause:{type:"string"}},required:["description"]}},
+{name:"resolve_incident",description:"Resolve an incident",input_schema:{type:"object",properties:{id:{type:"string"}},required:["id"]}},
+{name:"add_task",description:"Add a new task",input_schema:{type:"object",properties:{title:{type:"string"},priority:{type:"string"},workspace:{type:"string"},due:{type:"string"},impact:{type:"string"}},required:["title"]}},
+{name:"update_task",description:"Update a task field",input_schema:{type:"object",properties:{title:{type:"string"},field:{type:"string"},value:{type:"string"}},required:["title","field","value"]}},
+{name:"add_decision",description:"Add a strategic decision to the journal",input_schema:{type:"object",properties:{title:{type:"string"},why:{type:"string"}},required:["title","why"]}},
+{name:"add_dependency",description:"Add a dependency chain",input_schema:{type:"object",properties:{from_label:{type:"string"},blocks:{type:"string"},reason:{type:"string"}},required:["from_label","blocks"]}},
+{name:"add_log",description:"Add an activity log entry",input_schema:{type:"object",properties:{text:{type:"string"}},required:["text"]}},
 ];
 // File tools (always available to everyone)
 var FILE_TOOLS=[
@@ -1754,6 +1629,61 @@ var execLocal=function(name,input){
     acts.updateField("ss",D.ss[ssIdx].id,input.field||"mat",parseFloat(input.value)||0);
     acts.logActivity("edit","command","Command Center","Agent updated "+input.name+"."+input.field+"="+input.value);
     return"Updated subsystem "+input.name;
+  }
+  // Pilot CRUD
+  if(name==="update_pilot"){
+    if(!canEdit)return"DENIED";
+    var pi=D.pilots.findIndex(function(p){return p.id===input.id||p.name===input.name;});
+    if(pi<0)return"Pilot not found";
+    acts.updateField("pilots",D.pilots[pi].id,input.field,input.value);
+    return"Updated pilot "+input.name+"."+input.field;
+  }
+  if(name==="add_pilot"){
+    if(!canEdit)return"DENIED";
+    setD(function(prev){return Object.assign({},prev,{pilots:prev.pilots.concat([{id:"p_"+Date.now(),name:input.name||"New Pilot",stage:input.stage||"Identified",viab:parseInt(input.viab)||0,roi:input.roi||"",champ:"",champStr:"None",plant:"",plc:"",pain:"",skills:[],comp:[],risk:input.risk||"medium",qs:[],nextStep:"",fu:"",meetings:[],blockers:[],notes:[]}])});});
+    return"Added pilot "+input.name;
+  }
+  // Incident CRUD
+  if(name==="add_incident"){
+    if(!canEdit)return"DENIED";
+    setD(function(prev){return Object.assign({},prev,{incidents:prev.incidents.concat([{id:"INC-"+(prev.seq.inc+1),sev:input.severity||"medium",desc:input.description||"",down:"",root:input.root_cause||"",status:"open",reported:nw(),notes:[],acts:[],timeline:[]}]),seq:Object.assign({},prev.seq,{inc:prev.seq.inc+1})});});
+    return"Created incident";
+  }
+  if(name==="resolve_incident"){
+    if(!canEdit)return"DENIED";
+    var ii=D.incidents.findIndex(function(x){return x.id===input.id;});
+    if(ii>=0)acts.updateField("incidents",D.incidents[ii].id,"status","resolved");
+    return"Resolved "+input.id;
+  }
+  // Task CRUD
+  if(name==="add_task"){
+    if(!canEdit)return"DENIED";
+    setD(function(prev){return Object.assign({},prev,{tasks:prev.tasks.concat([{id:"t_"+Date.now(),pct:0,title:input.title||"New Task",ws:input.workspace||"General",status:"todo",pri:input.priority||"medium",due:input.due||"",owner:input.owner||"Jero",created:nw(),notes:[],blocked:"",sb:[],impact:input.impact||""}])});});
+    return"Added task "+input.title;
+  }
+  if(name==="update_task"){
+    if(!canEdit)return"DENIED";
+    var ti=D.tasks.findIndex(function(t){return t.id===input.id||t.title===input.title;});
+    if(ti<0)return"Task not found";
+    acts.updateField("tasks",D.tasks[ti].id,input.field,input.value);
+    return"Updated task."+input.field;
+  }
+  // Decision journal
+  if(name==="add_decision"){
+    if(!canEdit)return"DENIED";
+    setD(function(prev){return Object.assign({},prev,{decisions:(prev.decisions||[]).concat([{title:input.title||"",why:input.why||"",date:new Date().toLocaleDateString("en-US",{month:"short",year:"numeric"})}])});});
+    return"Added decision: "+input.title;
+  }
+  // Add dependency
+  if(name==="add_dependency"){
+    if(!canEdit)return"DENIED";
+    setD(function(prev){return Object.assign({},prev,{deps:(prev.deps||[]).concat([{from:"agent_"+Date.now(),fromLabel:input.from_label||"",blocks:(input.blocks||"").split(",").map(function(s){return s.trim();}),reason:input.reason||""}])});});
+    return"Added dependency";
+  }
+  // Activity log
+  if(name==="add_log"){
+    addLog(input.text||input.message||"Agent log entry");
+    return"Logged";
   }
   return"OK";
 };
