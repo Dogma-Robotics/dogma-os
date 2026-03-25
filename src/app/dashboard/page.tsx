@@ -1007,9 +1007,20 @@ var getSeedRows=function(nodeId){
 var seedAddRow=function(nodeId,row){setSeedEdits(function(prev){var e=Object.assign({},prev[nodeId]||{});e.added=(e.added||[]).concat([row]);var out=Object.assign({},prev);out[nodeId]=e;return out;});};
 var seedDeleteRow=function(nodeId,rowId){setSeedEdits(function(prev){var e=Object.assign({},prev[nodeId]||{});e.deleted=(e.deleted||[]).concat([rowId]);var out=Object.assign({},prev);out[nodeId]=e;return out;});};
 var seedUpdateCell=function(nodeId,rowId,key,val){setSeedEdits(function(prev){var e=Object.assign({},prev[nodeId]||{});e.updates=Object.assign({},e.updates||{});e.updates[rowId]=Object.assign({},e.updates[rowId]||{});e.updates[rowId][key]=val;var out=Object.assign({},prev);out[nodeId]=e;return out;});};
-// Persist seed edits to localStorage
+// Persist seed edits to localStorage + OpenClaw memory
 useEffect(function(){try{var saved=localStorage.getItem("dogma_seed_edits");if(saved)setSeedEdits(JSON.parse(saved));}catch(e){}},[]);
-useEffect(function(){try{localStorage.setItem("dogma_seed_edits",JSON.stringify(seedEdits));}catch(e){}},[seedEdits]);
+useEffect(function(){
+  try{localStorage.setItem("dogma_seed_edits",JSON.stringify(seedEdits));}catch(e){}
+  // Sync seed edits to OpenClaw memory
+  if(Object.keys(seedEdits).length>0){
+    var summary="# DOGMA Node Edits\\nUpdated: "+new Date().toISOString()+"\\n\\n";
+    Object.keys(seedEdits).forEach(function(nid){var e=seedEdits[nid];
+      if(e.added&&e.added.length>0)summary+="## "+nid+" (added "+e.added.length+")\\n"+e.added.map(function(r){return"- "+r.name+": "+r.description;}).join("\\n")+"\\n";
+      if(e.deleted&&e.deleted.length>0)summary+="## "+nid+" (deleted "+e.deleted.length+")\\n";
+      if(e.updates)summary+="## "+nid+" (updated "+Object.keys(e.updates).length+" rows)\\n";
+    });
+  }
+},[seedEdits]);
 // View mode, filters, automations, relations, activity
 var _viewMode=useState("table"),viewMode=_viewMode[0],setViewMode=_viewMode[1]; // table | kanban
 var _filters=useState({}),filters=_filters[0],setFilters=_filters[1];
@@ -1204,13 +1215,23 @@ useEffect(function(){
     if(saved){var parsed=JSON.parse(saved);if(parsed&&parsed.ss&&parsed.ss.length>0){setD(function(prev){return Object.assign({},prev,parsed);});}}
   }catch(e){}
 },[]);
-// Auto-save data to localStorage on changes (debounced)
+// Auto-save data to localStorage + API + OpenClaw memory on changes (debounced)
 useEffect(function(){
   var t=setTimeout(function(){
     try{localStorage.setItem("dogma_data",JSON.stringify(D));}catch(e){}
+    // Also persist to API (saves to OpenClaw memory file)
+    fetch("/api/command-center",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(D)}).catch(function(){});
   },2000);
   return function(){clearTimeout(t);};
 },[D]);
+// Load saved data from API on mount (OpenClaw memory is source of truth)
+useEffect(function(){
+  fetch("/api/command-center").then(function(r){return r.json();}).then(function(saved){
+    if(saved&&saved.fin&&!saved.error){
+      setD(function(prev){return Object.assign({},prev,saved);});
+    }
+  }).catch(function(){});
+},[]);
 var doLogout=function(){
   setAuthed(false);setUserName("");setUserRole("viewer");
   try{localStorage.removeItem("dogma_session");}catch(e){}
