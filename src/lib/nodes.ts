@@ -216,6 +216,7 @@ export const NODE_TREE: NodeConfig[] = [
      GROUP 7 — Operations (existing Supabase tables)
      ================================================================ */
   {id:'group-operations',label:'Operations',icon:'\u{1F3E2}',description:'Operational data backed by dedicated Supabase tables',dbTable:'subsystems',columns:ssCols,children:[
+    ss('command-center','Command Center','\u{1F4CA}','Executive dashboard: finance, pilots, incidents, tasks, M0-M9 status, risks, decisions'),
     {id:'tasks',label:'Tasks',icon:'\u{1F4CB}',description:'Engineering and business task tracker',dbTable:'tasks',columns:taskCols,children:[]},
     {id:'pilots',label:'Pilots',icon:'\u{1F3ED}',description:'Manufacturing pilot partnerships',dbTable:'pilots',columns:pilotCols,children:[]},
     {id:'investors',label:'Investors',icon:'\u{1F4B0}',description:'Fundraising pipeline',dbTable:'investors',columns:investorCols,children:[]},

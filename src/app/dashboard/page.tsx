@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Updated: 2026-03-24 21:29 - Burn $400/mo, Cash $5.5K, Runway 11mo, 1 pilot
+// Updated: 2026-03-24 21:45 - DOGMA Finance: Burn $400/mo, Cash $5,500, Runway 11mo, 1 active pilot
 'use client'
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useOpenClaw } from '@/hooks/useOpenClaw';
@@ -237,7 +237,9 @@ var R=1.8;return items.filter(Boolean).map(function(it,i){var a=(i/Math.max(item
 
 // ── FULL PAGES ──
 function MainPage({nid,D,files,onUpload,onRemove,acts}){var oI=D.incidents.filter(function(i){return i.status!=="resolved";}).length;var cr=D.tasks.filter(function(t){return t.pri==="critical"&&t.status!=="done";}).length;var am=Math.round(D.ss.reduce(function(a,s){return a+s.mat;},0)/D.ss.length);var ce=acts.canEdit;var addLog=function(t){if(acts.logActivity)acts.logActivity("edit","command","Command Center",t);};var setD=acts._setD;
-if(nid==="command"){var risks=calcRisks(D);var depChains=D.deps||[];var pDead=D.pilotDeadlines||{};return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>DOGMA Command Center</div><div style={{fontSize:14,color:C.tx2,marginBottom:12}}>Executive overview — {dy()}</div>
+// Redirect "command" to "command-center" node
+if(nid==="command")nid="command-center";
+if(false&&nid==="command__old"){var risks=calcRisks(D);var depChains=D.deps||[];var pDead=D.pilotDeadlines||{};return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>DOGMA Command Center</div><div style={{fontSize:14,color:C.tx2,marginBottom:12}}>Executive overview — {dy()}</div>
 
 {/* Metrics Dashboard — fully editable */}
 <MetricsDashboard
@@ -1007,18 +1009,13 @@ var getSeedRows=function(nodeId){
 var seedAddRow=function(nodeId,row){setSeedEdits(function(prev){var e=Object.assign({},prev[nodeId]||{});e.added=(e.added||[]).concat([row]);var out=Object.assign({},prev);out[nodeId]=e;return out;});};
 var seedDeleteRow=function(nodeId,rowId){setSeedEdits(function(prev){var e=Object.assign({},prev[nodeId]||{});e.deleted=(e.deleted||[]).concat([rowId]);var out=Object.assign({},prev);out[nodeId]=e;return out;});};
 var seedUpdateCell=function(nodeId,rowId,key,val){setSeedEdits(function(prev){var e=Object.assign({},prev[nodeId]||{});e.updates=Object.assign({},e.updates||{});e.updates[rowId]=Object.assign({},e.updates[rowId]||{});e.updates[rowId][key]=val;var out=Object.assign({},prev);out[nodeId]=e;return out;});};
-// Persist seed edits to localStorage + OpenClaw memory
+// Persist seed edits to localStorage + sync to OpenClaw memory
 useEffect(function(){try{var saved=localStorage.getItem("dogma_seed_edits");if(saved)setSeedEdits(JSON.parse(saved));}catch(e){}},[]);
 useEffect(function(){
   try{localStorage.setItem("dogma_seed_edits",JSON.stringify(seedEdits));}catch(e){}
-  // Sync seed edits to OpenClaw memory
+  // Sync to OpenClaw memory via command-center API
   if(Object.keys(seedEdits).length>0){
-    var summary="# DOGMA Node Edits\\nUpdated: "+new Date().toISOString()+"\\n\\n";
-    Object.keys(seedEdits).forEach(function(nid){var e=seedEdits[nid];
-      if(e.added&&e.added.length>0)summary+="## "+nid+" (added "+e.added.length+")\\n"+e.added.map(function(r){return"- "+r.name+": "+r.description;}).join("\\n")+"\\n";
-      if(e.deleted&&e.deleted.length>0)summary+="## "+nid+" (deleted "+e.deleted.length+")\\n";
-      if(e.updates)summary+="## "+nid+" (updated "+Object.keys(e.updates).length+" rows)\\n";
-    });
+    fetch("/api/command-center",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"full_update",data:{seedEdits:seedEdits,_lastEdit:new Date().toISOString()}})}).catch(function(){});
   }
 },[seedEdits]);
 // View mode, filters, automations, relations, activity
@@ -1208,50 +1205,20 @@ useEffect(function(){
   // Not authenticated - redirect to login
   if(typeof window!=="undefined")window.location.href="/";
 },[]);
-// Data loading: API file > localStorage > seed (in priority order)
-var _dataReady=useState(false),dataReady=_dataReady[0],setDataReady=_dataReady[1];
+// Restore saved data from localStorage
 useEffect(function(){
-  // 1. Try API (OpenClaw memory file — source of truth)
-  fetch("/api/command-center").then(function(r){return r.json();}).then(function(saved){
-    if(saved&&saved.ss&&!saved.error){
-      setD(function(prev){return Object.assign({},prev,saved);});
-      setDataReady(true);
-      return;
-    }
-    throw new Error("no api data");
-  }).catch(function(){
-    // 2. Try localStorage
-    try{
-      var local=localStorage.getItem("dogma_data");
-      if(local){var parsed=JSON.parse(local);if(parsed&&parsed.ss&&parsed.ss.length>0){setD(function(prev){return Object.assign({},prev,parsed);});}}
-    }catch(e){}
-    setDataReady(true);
-  });
+  try{
+    var saved=localStorage.getItem("dogma_data");
+    if(saved){var parsed=JSON.parse(saved);if(parsed&&parsed.ss&&parsed.ss.length>0){setD(function(prev){return Object.assign({},prev,parsed);});}}
+  }catch(e){}
 },[]);
-// Auto-save ONLY after data is loaded (prevents overwriting saved data with seed)
+// Auto-save data to localStorage on changes (debounced)
 useEffect(function(){
-  if(!dataReady)return;
   var t=setTimeout(function(){
     try{localStorage.setItem("dogma_data",JSON.stringify(D));}catch(e){}
-    fetch("/api/command-center",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(D)}).catch(function(){});
   },2000);
   return function(){clearTimeout(t);};
-},[D,dataReady]);
-// Poll for OpenClaw agent changes every 10s
-useEffect(function(){
-  if(!dataReady)return;
-  var iv=setInterval(function(){
-    fetch("/api/command-center").then(function(r){return r.json();}).then(function(saved){
-      if(saved&&saved.ss&&!saved.error){
-        // Only update if data actually changed (compare timestamps or keys)
-        if(saved._lastAgentEdit&&saved._lastAgentEdit!==D._lastAgentEdit){
-          setD(function(prev){return Object.assign({},prev,saved);});
-        }
-      }
-    }).catch(function(){});
-  },10000);
-  return function(){clearInterval(iv);};
-},[dataReady]);
+},[D]);
 var doLogout=function(){
   setAuthed(false);setUserName("");setUserRole("viewer");
   try{localStorage.removeItem("dogma_session");}catch(e){}
@@ -2007,7 +1974,7 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
     {/* Left Sidebar — NODE_TREE driven */}
     <div style={{width:220,minWidth:220,background:C.bg1,borderRight:"1px solid "+C.bd,overflowY:"auto",flexShrink:0,fontSize:12}}>
       {/* COMMAND node */}
-      <div onClick={function(){focusNode([0,0,0],24);setSel({level:"main",id:"command"});}} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",cursor:"pointer",borderBottom:"1px solid "+C.bd+"40",background:sel&&sel.id==="command"?C.gold+"12":"transparent"}} onMouseEnter={function(e){e.currentTarget.style.background=C.bg3;}} onMouseLeave={function(e){e.currentTarget.style.background=sel&&sel.id==="command"?C.gold+"12":"transparent";}}>
+      <div onClick={function(){focusNode([0,0,0],24);setSel({level:"main",id:"command-center"});}} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",cursor:"pointer",borderBottom:"1px solid "+C.bd+"40",background:sel&&sel.id==="command-center"?C.gold+"12":"transparent"}} onMouseEnter={function(e){e.currentTarget.style.background=C.bg3;}} onMouseLeave={function(e){e.currentTarget.style.background=sel&&sel.id==="command-center"?C.gold+"12":"transparent";}}>
         <div style={{width:10,height:10,borderRadius:"50%",background:"#C8A74B",flexShrink:0}}/>
         <span style={{fontWeight:700,color:C.gold,fontSize:13}}>DOGMA COMMAND</span>
       </div>
