@@ -22,6 +22,34 @@ import RelationsPanel from '@/components/dashboard/RelationsPanel';
 import ActivityFeed from '@/components/dashboard/ActivityFeed';
 import MetricsDashboard from '@/components/dashboard/MetricsDashboard';
 var THREE = typeof window !== "undefined" ? require("three") : null;
+
+// OpenClaw Documents panel — shows files created by the agent
+function OcDocs(){
+  var _docs=useState([]),docs=_docs[0],setDocs=_docs[1];
+  var _open=useState(false),isOpen=_open[0],setOpen=_open[1];
+  useEffect(function(){
+    fetch("/api/openclaw-files").then(function(r){return r.json();}).then(function(d){
+      if(d.files)setDocs(d.files.filter(function(f){return f.name.match(/\.(html|pdf|md|txt|csv|doc)$/i);}));
+    }).catch(function(){});
+  },[isOpen]);
+  if(docs.length===0)return null;
+  var fmtSize=function(s){return s>1048576?(s/1048576).toFixed(1)+"MB":s>1024?Math.round(s/1024)+"KB":s+"B";};
+  return(<div style={{borderTop:"1px solid "+C.bd,flexShrink:0}}>
+    <div onClick={function(){setOpen(!isOpen);}} style={{padding:"6px 10px",display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:10}}>
+      <span style={{color:C.tx3}}>{isOpen?"▼":"▶"}</span>
+      <span style={{color:C.gold,fontWeight:600}}>📄 Documents ({docs.length})</span>
+    </div>
+    {isOpen&&<div style={{maxHeight:200,overflowY:"auto",padding:"0 10px 8px"}}>
+      {docs.map(function(f){return <div key={f.name+f.dir} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",fontSize:10,borderBottom:"1px solid "+C.bd+"20"}}>
+        <span>{f.name.match(/\.html$/i)?"🌐":f.name.match(/\.pdf$/i)?"📄":f.name.match(/\.md$/i)?"📝":"📎"}</span>
+        <span style={{flex:1,color:C.tx,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span>
+        <span style={{color:C.tx3,fontSize:9}}>{fmtSize(f.size)}</span>
+        <span onClick={function(){window.open("/api/openclaw-files?file="+encodeURIComponent(f.name),"_blank");}} style={{color:C.gold,cursor:"pointer",padding:"2px 6px",border:"1px solid "+C.gold+"30",borderRadius:2}}>Open</span>
+        <a href={"/api/openclaw-files?file="+encodeURIComponent(f.name)} download={f.name} style={{color:C.b,padding:"2px 6px",border:"1px solid "+C.b+"30",borderRadius:2,textDecoration:"none",fontSize:10}}>⬇</a>
+      </div>;})}
+    </div>}
+  </div>);
+}
 var nw=function(){return new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});};
 var dy=function(){return new Date().toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});};
 function PB({val,w,color}){return <ProgressBar val={val} w={w} color={color}/>;}
@@ -2083,13 +2111,8 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
         </div>
         {oc.gateway.connected?<div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
           <iframe src="/api/openclaw" style={{flex:1,border:"none",width:"100%",background:C.bg}} allow="clipboard-read; clipboard-write"/>
-          <div style={{padding:"6px 10px",borderTop:"1px solid "+C.bd+"40",display:"flex",alignItems:"center",gap:8,flexShrink:0,fontSize:10}}>
-            <span style={{color:C.tx3}}>WebSocket:</span>
-            <span style={{color:C.tx,fontFamily:"'JetBrains Mono',monospace"}}>ws://localhost:18789</span>
-            <span style={{color:C.tx3}}>Token:</span>
-            <span style={{color:C.gold,fontFamily:"'JetBrains Mono',monospace",cursor:"pointer"}} onClick={function(){navigator.clipboard.writeText("c1b587d6e4015fcba76853c05e4004d8a2c3576c4eff3d0b");}} title="Click to copy">c1b587...4d8a2c</span>
-            <span style={{color:C.tx3,fontSize:9}}>(click to copy)</span>
-          </div>
+          {/* Documents panel — shows files created by OpenClaw */}
+          <OcDocs/>
         </div>
           :<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
             <div style={{textAlign:"center",maxWidth:320}}>
