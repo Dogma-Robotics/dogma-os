@@ -22,6 +22,7 @@ import AutomationsPanel from '@/components/dashboard/AutomationsPanel';
 import RelationsPanel from '@/components/dashboard/RelationsPanel';
 import ActivityFeed from '@/components/dashboard/ActivityFeed';
 import NodeTemplates from '@/components/dashboard/NodeTemplates';
+import MetricsDashboard from '@/components/dashboard/MetricsDashboard';
 import { useNodeData } from '@/hooks/useNodeData';
 var THREE = typeof window !== "undefined" ? require("three") : null;
 var nw=function(){return new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});};
@@ -239,8 +240,28 @@ var R=1.8;return items.filter(Boolean).map(function(it,i){var a=(i/Math.max(item
 
 // ── FULL PAGES ──
 function MainPage({nid,D,files,onUpload,onRemove,acts}){var oI=D.incidents.filter(function(i){return i.status!=="resolved";}).length;var cr=D.tasks.filter(function(t){return t.pri==="critical"&&t.status!=="done";}).length;var am=Math.round(D.ss.reduce(function(a,s){return a+s.mat;},0)/D.ss.length);
-if(nid==="command"){var risks=calcRisks(D);var depChains=D.deps||[];var pDead=D.pilotDeadlines||{};return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>DOGMA Command Center</div><div style={{fontSize:14,color:C.tx2,marginBottom:12}}>Executive overview - {dy()} <span style={{fontSize:10,padding:"2px 6px",borderRadius:3,background:C.a+"12",color:C.a,marginLeft:8}}>seed data — connect to Supabase for live</span></div>
-<div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>{[[D.fin.runway+"mo","Runway",D.fin.runway<4?C.r:C.a],[oI,"Open Incidents",oI?C.r:C.g],[cr,"Critical Tasks",cr?C.r:C.g],[am+"%","Avg Maturity",am>60?C.g:C.a],[D.pilots.length,"Pilot Pipeline",C.gold],[D.investors.length,"Investors",C.a]].map(function(x,i){return <div key={i} style={{background:C.bg,padding:8,borderRadius:4,borderLeft:"3px solid "+x[2]}}><div style={{fontSize:18,fontWeight:700,color:x[2],fontFamily:"'JetBrains Mono',monospace"}}>{x[0]}</div><div style={{fontSize:10,color:C.tx3,textTransform:"uppercase"}}>{x[1]}</div></div>;})}</div>
+if(nid==="command"){var risks=calcRisks(D);var depChains=D.deps||[];var pDead=D.pilotDeadlines||{};return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>DOGMA Command Center</div><div style={{fontSize:14,color:C.tx2,marginBottom:12}}>Executive overview — {dy()}</div>
+
+{/* Metrics Dashboard */}
+<MetricsDashboard
+  finance={D.fin}
+  pilots={D.pilots.map(function(p){return{name:p.name,viab:p.viab,stage:p.stage,roi:p.roi||""};})}
+  controlModules={[
+    {id:"m0",name:"M0 Safety",rate:"1-5kHz",status:"planned"},
+    {id:"m1",name:"M1 Pressure",rate:"500-1000Hz",status:"planned"},
+    {id:"m2",name:"M2 Force",rate:"200-500Hz",status:"planned"},
+    {id:"m3",name:"M3 Proprio",rate:"100-300Hz",status:"planned"},
+    {id:"m4",name:"M4 Vision",rate:"30Hz",status:"planned"},
+    {id:"m5",name:"M5 Fusion",rate:"60-120Hz",status:"planned"},
+    {id:"m6",name:"M6 Reflex",rate:"100-300Hz",status:"planned"},
+    {id:"m7",name:"M7 Policy",rate:"10-30Hz",status:"planned"},
+    {id:"m8",name:"M8 Language",rate:"0.5-5Hz",status:"planned"},
+    {id:"m9",name:"M9 Meta",rate:"0.1-1Hz",status:"planned"},
+  ]}
+  subsystems={D.ss.map(function(s){return{name:s.name,maturity:s.mat,status:s.status};})}
+  tasks={D.tasks.map(function(t){return{title:t.title,status:t.status,priority:t.pri,progress:t.pct||0};})}
+  incidents={D.incidents.map(function(i){return{id:i.id,status:i.status,severity:i.sev};})}
+/>
 
 {risks.length>0&&<div><Sec>Risk Alerts ({risks.length})</Sec>{risks.slice(0,8).map(function(r,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 8px",background:r.sev==="critical"?C.r+"08":C.a+"06",borderLeft:"3px solid "+(r.sev==="critical"?C.r:r.sev==="high"?C.a:C.b),borderRadius:3,marginBottom:3,fontSize:13}}>
 <Tag color={r.sev==="critical"?C.r:r.sev==="high"?C.a:C.b}>{r.sev}</Tag>
@@ -1271,10 +1292,23 @@ var searchResults=useMemo(function(){
   D.milestones.forEach(function(m){if((m.id+m.title+m.risk).toLowerCase().indexOf(q)>=0)results.push({id:m.id,label:m.title,type:"Milestone",metric:m.pct+"%",color:dc(m.risk),level:"sub",parent:"roadmap",data:m});});
   D.safety.forEach(function(s){if((s.id+s.name+(s.gaps||[]).join(" ")).toLowerCase().indexOf(q)>=0)results.push({id:s.id,label:s.name,type:"Safety",metric:s.cov+"%",color:s.cov>70?C.g:C.r,level:"sub",parent:"roadmap",data:s});});
   D.supply.forEach(function(s){if((s.id+s.item+s.supplier+s.note).toLowerCase().indexOf(q)>=0)results.push({id:s.id,label:s.item,type:"Supply",metric:s.risk,color:dc(s.risk==="high"?"critical":"active"),level:"sub",parent:"finance",data:s});});
-  // Also search main nodes
+  // Search 3D nodes
   NODES.forEach(function(n){if(n.label.toLowerCase().indexOf(q)>=0)results.push({id:n.id,label:n.label,type:"Node",metric:"",color:C.gold,level:"main",parent:""});});
-  return results.slice(0,12);
-},[search,D]);
+  // Search all NODE_TREE nodes + seed data
+  (function walkTree(nodes){nodes.forEach(function(n){
+    if((n.id+n.label+n.description).toLowerCase().indexOf(q)>=0)results.push({id:n.id,label:n.label,type:"Node",metric:"",color:C.gold,level:"main",parent:""});
+    // Search seed data rows for this node
+    var rows=SEED_DATA[n.id]||[];
+    rows.forEach(function(r){
+      var txt=(r.name||"")+(r.description||"")+(r.title||"");
+      if(txt.toLowerCase().indexOf(q)>=0)results.push({id:n.id,label:(r.name||r.title||"")+" ("+n.label+")",type:n.label,metric:r.status||"",color:C.tx2,level:"main",parent:""});
+    });
+    if(n.children)walkTree(n.children);
+  });})(liveTree);
+  // Deduplicate by id+label
+  var seen={};results=results.filter(function(r){var k=r.id+r.label;if(seen[k])return false;seen[k]=true;return true;});
+  return results.slice(0,15);
+},[search,D,liveTree]);
 var chatEnd=useRef(null);
 
 // Auth system
