@@ -2510,10 +2510,41 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
           <div style={{fontSize:15,fontWeight:700,color:C.gold,marginBottom:4}}>📄 Document Generator</div>
           <div style={{fontSize:11,color:C.tx2}}>Generate documents via OpenClaw. Brand guidelines are included in every request.</div>
         </div>
-        {/* Brand guidelines editor */}
+        {/* Brand guidelines editor + file uploads */}
         <div style={{padding:"8px 12px",borderBottom:"1px solid "+C.bd,flexShrink:0}}>
           <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:4}}>Brand Guidelines (injected into all requests)</div>
           <textarea value={designGuide} onChange={function(e){setDesignGuide(e.target.value);}} style={{width:"100%",minHeight:80,padding:"8px 10px",fontSize:11,lineHeight:1.5,background:C.bg,border:"1px solid "+C.bd,borderRadius:4,color:C.tx,outline:"none",resize:"vertical",fontFamily:"'JetBrains Mono',monospace"}}/>
+          {/* Uploaded reference files */}
+          <div style={{marginTop:8}}>
+            <div style={{fontSize:10,color:C.tx3,marginBottom:4}}>Reference Documents & Images ({designImages.length})</div>
+            {designImages.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:6}}>
+              {designImages.map(function(f,i){var isImg=f.type&&f.type.indexOf("image")>=0;return <div key={i} style={{display:"flex",alignItems:"center",gap:4,padding:"3px 6px",background:C.bg,borderRadius:3,border:"1px solid "+C.bd,fontSize:10}}>
+                {isImg&&f.data?<img src={f.data} style={{width:24,height:24,objectFit:"cover",borderRadius:2}}/>:<span>{f.type&&f.type.indexOf("pdf")>=0?"📄":f.type&&f.type.indexOf("image")>=0?"🖼":"📎"}</span>}
+                <span style={{color:C.tx,maxWidth:80,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span>
+                <span style={{fontSize:8,color:C.tx3}}>{f.size?Math.round(f.size/1024)+"KB":""}</span>
+                <span onClick={function(){setDesignImages(function(prev){return prev.filter(function(_,j){return j!==i;});});}} style={{cursor:"pointer",color:C.r,fontSize:10}}>x</span>
+              </div>;})}
+            </div>}
+            <div style={{position:"relative"}}>
+              <input type="file" multiple accept="image/*,.pdf,.md,.txt,.doc,.docx,.csv,.json" onChange={function(e){var files=e.target.files;if(!files)return;for(var i=0;i<files.length;i++){(function(file){var reader=new FileReader();reader.onload=function(ev){
+                // For text files, append content to guidelines
+                if(file.type.indexOf("text")>=0||file.name.endsWith(".md")||file.name.endsWith(".txt")||file.name.endsWith(".csv")){
+                  var text=ev.target.result;
+                  setDesignGuide(function(prev){return prev+"\n\n--- "+file.name+" ---\n"+text;});
+                  setDesignImages(function(prev){return prev.concat([{name:file.name,size:file.size,type:file.type,data:null}]);});
+                } else {
+                  // For images/PDFs, store as data URL
+                  setDesignImages(function(prev){return prev.concat([{name:file.name,size:file.size,type:file.type,data:ev.target.result}]);});
+                }
+              };
+              if(file.type.indexOf("text")>=0||file.name.endsWith(".md")||file.name.endsWith(".txt")||file.name.endsWith(".csv")){reader.readAsText(file);}
+              else{reader.readAsDataURL(file);}
+              })(files[i]);}
+              e.target.value="";
+              }} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer"}}/>
+              <div style={{padding:"8px",border:"1px dashed "+C.bd,borderRadius:4,textAlign:"center",cursor:"pointer",fontSize:11,color:C.tx3}}>+ Upload documents, images, or text files</div>
+            </div>
+          </div>
         </div>
         {/* Quick document templates */}
         <div style={{padding:"8px 12px",borderBottom:"1px solid "+C.bd,flexShrink:0}}>
