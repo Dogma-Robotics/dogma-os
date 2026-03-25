@@ -32,30 +32,60 @@ function parseThinking(t){if(!t)return{thinking:"",text:t};var start=t.indexOf("
 
 
 // File upload component per node
-function FileUpload({nodeId,files,onUpload,onRemove}){
+function FileUpload({nodeId,nodeName,files,onUpload,onRemove}){
   var nodeFiles=(files[nodeId]||[]);
   var inputRef=useRef(null);
+  var _saving=useState(null),saving=_saving[0],setSaving=_saving[1];
   var handleFile=function(e){
     var f=e.target.files;if(!f||!f.length)return;
     for(var i=0;i<f.length;i++){
-      var file=f[i];var reader=new FileReader();
+      var file=f[i];
+      // Save to local state
+      var reader=new FileReader();
       reader.onload=function(ev){
-        onUpload(nodeId,{name:file.name,size:file.size,type:file.type,data:ev.target.result,at:nw()});
+        onUpload(nodeId,{name:file.name,size:file.size,type:file.type,data:ev.target.result,at:nw(),savedToMemory:false});
       };
       reader.readAsDataURL(file);
+      // Also save to OpenClaw memory
+      (function(fl){
+        setSaving(fl.name);
+        var fd=new FormData();
+        fd.append("file",fl);
+        fd.append("nodeId",nodeId);
+        fd.append("nodeName",nodeName||nodeId);
+        fetch("/api/openclaw-memory",{method:"POST",body:fd}).then(function(r){return r.json();}).then(function(d){
+          if(d.ok){
+            // Update the file entry to show it's saved to memory
+            onUpload(nodeId,{name:fl.name,size:fl.size,type:fl.type,data:null,at:nw(),savedToMemory:true,memoryFile:d.fileName});
+          }
+          setSaving(null);
+        }).catch(function(){setSaving(null);});
+      })(file);
     }
     e.target.value="";
   };
   return(<div style={{marginTop:10}}>
     <Sec>Files ({nodeFiles.length})</Sec>
+    {saving&&<div style={{fontSize:10,color:C.gold,padding:"4px 0",display:"flex",alignItems:"center",gap:4}}>🦞 Saving to OpenClaw memory: {saving}...</div>}
     {nodeFiles.map(function(f,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",background:C.bg,borderRadius:3,marginBottom:3,border:"1px solid "+C.bd}}>
-      <span style={{fontSize:16}}>{f.type&&f.type.indexOf("image")>=0?"\uD83D\uDDBC":f.type&&f.type.indexOf("pdf")>=0?"\uD83D\uDCC4":"\uD83D\uDCC1"}</span>
-      <div style={{flex:1}}><div style={{fontSize:13,color:C.tx}}>{f.name}</div><div style={{fontSize:10,color:C.tx3}}>{(f.size/1024).toFixed(1)}KB - {f.at}</div></div>
-      {f.type&&f.type.indexOf("image")>=0&&<img src={f.data} style={{width:40,height:40,objectFit:"cover",borderRadius:3,border:"1px solid "+C.bd}}/>}
-      <span onClick={function(){onRemove(nodeId,i);}} style={{cursor:"pointer",color:C.tx3,fontSize:14}}>x</span>
+      <span style={{fontSize:16}}>{f.type&&f.type.indexOf("image")>=0?"🖼":f.type&&f.type.indexOf("pdf")>=0?"📄":"📁"}</span>
+      <div style={{flex:1}}>
+        <div style={{fontSize:13,color:C.tx}}>{f.name}</div>
+        <div style={{fontSize:10,color:C.tx3,display:"flex",alignItems:"center",gap:4}}>
+          {f.size?(f.size/1024).toFixed(1)+"KB":""}
+          {f.at&&<span> — {f.at}</span>}
+          {f.savedToMemory&&<span style={{color:C.g,fontSize:9,padding:"1px 4px",background:C.g+"12",borderRadius:2}}>🦞 In OpenClaw memory</span>}
+        </div>
+      </div>
+      {f.type&&f.type.indexOf("image")>=0&&f.data&&<img src={f.data} style={{width:40,height:40,objectFit:"cover",borderRadius:3,border:"1px solid "+C.bd}}/>}
+      <span onClick={function(){
+        onRemove(nodeId,i);
+        // Also remove from OpenClaw memory if it was saved there
+        if(f.memoryFile){fetch("/api/openclaw-memory",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({fileName:f.memoryFile})}).catch(function(){});}
+      }} style={{cursor:"pointer",color:C.tx3,fontSize:14}}>x</span>
     </div>;})}
     <input ref={inputRef} type="file" multiple style={{display:"none"}} onChange={handleFile}/>
-    <div onClick={function(){inputRef.current.click();}} style={{padding:"8px 12px",border:"1px dashed "+C.bd,borderRadius:3,textAlign:"center",cursor:"pointer",fontSize:13,color:C.tx3,marginTop:4}}>+ Upload files</div>
+    <div onClick={function(){inputRef.current.click();}} style={{padding:"8px 12px",border:"1px dashed "+C.bd,borderRadius:3,textAlign:"center",cursor:"pointer",fontSize:12,color:C.tx3,marginTop:4}}>+ Upload files (auto-saved to 🦞 OpenClaw memory)</div>
   </div>);
 }
 
@@ -420,7 +450,7 @@ if(nid==="command"){var risks=calcRisks(D);var depChains=D.deps||[];var pDead=D.
 })}
 {D.incidents.filter(function(i){return i.status==="resolved";}).length===0&&<div style={{fontSize:11,color:C.tx3}}>No resolved incidents yet</div>}
 
-<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
+<FileUpload nodeId={nid} nodeName={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
 if(nid==="rd")return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Research & Development</div><Row label="Avg Maturity" value={am+"%"} color={am>60?C.g:C.a}/><Row label="Total Issues" value={D.ss.reduce(function(a,s){return a+s.issues;},0)}/><Row label="Skills Validated" value={D.skills.filter(function(s){return s.status==="validated";}).length+"/"+D.skills.length}/><Sec>Subsystems ({D.ss.length})</Sec>{D.ss.map(function(s,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",fontSize:14,borderBottom:"1px solid "+C.bd+"30"}}><Dot s={s.status}/><span style={{flex:1}}>{s.name}</span><PB val={s.mat} w={50}/><span style={{fontFamily:"'JetBrains Mono',monospace",color:C.tx2,minWidth:35}}>{s.mat}%</span><Tag>{s.ver}</Tag></div>;})}<Sec>Skills ({D.skills.length})</Sec>{D.skills.map(function(s,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",fontSize:14,borderBottom:"1px solid "+C.bd+"30"}}><Dot s={s.status}/><span style={{flex:1}}>{s.name}</span><span style={{fontFamily:"'JetBrains Mono',monospace",color:s.success>80?C.g:s.success>60?C.a:C.r}}>{s.success}%</span><span style={{fontSize:11,color:C.tx3}}>{s.tests} tests</span></div>;})}<Sec>📡 Live View Layers</Sec>
 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:12}}>
   <div style={{background:C.bg,borderRadius:6,padding:8,border:"1px solid "+C.bd,borderTop:"3px solid "+C.g}}>
@@ -460,9 +490,9 @@ if(nid==="rd")return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,m
     <span style={{color:C.b}}>●</span> Skills blocked
   </div>
 </div>
-<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);
-if(nid==="experiments"){var pr=D.exps.length?Math.round(D.exps.filter(function(e){return e.outcome==="pass";}).length/D.exps.length*100):0;return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Experiment Log</div><Row label="Total" value={D.exps.length}/><Row label="Pass Rate" value={pr+"%"} color={pr>60?C.g:C.a}/><Row label="Failed" value={D.exps.filter(function(e){return e.outcome==="fail";}).length} color={C.r}/><Sec>All Experiments</Sec>{D.exps.map(function(e,i){return <div key={i} style={{padding:"8px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{display:"flex",alignItems:"center",gap:6,fontSize:14}}><Dot s={e.outcome}/><span style={{color:C.gold,fontFamily:"'JetBrains Mono',monospace"}}>{e.id}</span><span style={{flex:1}}>{e.title}</span><Tag color={dc(e.outcome)}>{e.outcome}</Tag><span style={{fontSize:12,color:C.tx3}}>{e.date}</span></div>{e.conclusion&&<div style={{fontSize:12,color:C.tx2,marginTop:3,paddingLeft:20}}>{e.conclusion.slice(0,100)}...</div>}</div>;})}<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
-if(nid==="incidents")return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Incident Tracker</div><Row label="Open" value={oI} color={oI?C.r:C.g}/><Row label="Investigating" value={D.incidents.filter(function(i){return i.status==="investigating";}).length} color={C.a}/><Row label="Resolved" value={D.incidents.filter(function(i){return i.status==="resolved";}).length} color={C.g}/><Sec>All Incidents</Sec>{D.incidents.map(function(ic,i){return <div key={i} style={{padding:"8px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{display:"flex",alignItems:"center",gap:6,fontSize:14}}><Dot s={ic.status}/><span style={{color:C.gold,fontFamily:"'JetBrains Mono',monospace"}}>{ic.id}</span><span style={{flex:1}}>{ic.desc.slice(0,50)}</span><Tag color={dc(ic.sev)}>{ic.sev}</Tag><Tag color={dc(ic.status)}>{ic.status}</Tag></div><div style={{fontSize:12,color:C.tx3,marginTop:2}}>Down: {ic.down} | Root: {ic.root}</div></div>;})}<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);
+<FileUpload nodeId={nid} nodeName={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);
+if(nid==="experiments"){var pr=D.exps.length?Math.round(D.exps.filter(function(e){return e.outcome==="pass";}).length/D.exps.length*100):0;return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Experiment Log</div><Row label="Total" value={D.exps.length}/><Row label="Pass Rate" value={pr+"%"} color={pr>60?C.g:C.a}/><Row label="Failed" value={D.exps.filter(function(e){return e.outcome==="fail";}).length} color={C.r}/><Sec>All Experiments</Sec>{D.exps.map(function(e,i){return <div key={i} style={{padding:"8px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{display:"flex",alignItems:"center",gap:6,fontSize:14}}><Dot s={e.outcome}/><span style={{color:C.gold,fontFamily:"'JetBrains Mono',monospace"}}>{e.id}</span><span style={{flex:1}}>{e.title}</span><Tag color={dc(e.outcome)}>{e.outcome}</Tag><span style={{fontSize:12,color:C.tx3}}>{e.date}</span></div>{e.conclusion&&<div style={{fontSize:12,color:C.tx2,marginTop:3,paddingLeft:20}}>{e.conclusion.slice(0,100)}...</div>}</div>;})}<FileUpload nodeId={nid} nodeName={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
+if(nid==="incidents")return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Incident Tracker</div><Row label="Open" value={oI} color={oI?C.r:C.g}/><Row label="Investigating" value={D.incidents.filter(function(i){return i.status==="investigating";}).length} color={C.a}/><Row label="Resolved" value={D.incidents.filter(function(i){return i.status==="resolved";}).length} color={C.g}/><Sec>All Incidents</Sec>{D.incidents.map(function(ic,i){return <div key={i} style={{padding:"8px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{display:"flex",alignItems:"center",gap:6,fontSize:14}}><Dot s={ic.status}/><span style={{color:C.gold,fontFamily:"'JetBrains Mono',monospace"}}>{ic.id}</span><span style={{flex:1}}>{ic.desc.slice(0,50)}</span><Tag color={dc(ic.sev)}>{ic.sev}</Tag><Tag color={dc(ic.status)}>{ic.status}</Tag></div><div style={{fontSize:12,color:C.tx3,marginTop:2}}>Down: {ic.down} | Root: {ic.root}</div></div>;})}<FileUpload nodeId={nid} nodeName={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);
 if(nid==="fleet"){
 var totalHours=D.fleet.reduce(function(a,f){return a+f.hours;},0);
 var activeU=D.fleet.filter(function(f){return f.status==="active";}).length;
@@ -525,7 +555,7 @@ return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}
   <Tag color={dc(s.risk==="high"?"critical":"active")}>{s.risk}</Tag>
   <span style={{fontSize:10,color:C.tx3}}>{s.lead}</span>
 </div>;})}
-<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
+<FileUpload nodeId={nid} nodeName={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
 if(nid==="pilots"){
 var tr=D.pilots.reduce(function(a,p){return a+(parseInt(String(p.roi).replace(/[^0-9]/g,""))||0);},0);
 // Scoring engine
@@ -576,7 +606,7 @@ return <div key={i} style={{padding:"10px 0",borderBottom:"1px solid "+C.bd+"30"
   {p.blockers&&p.blockers.length>0&&<div style={{fontSize:10,color:C.r,marginTop:4}}>⚠ {p.blockers.join(" | ")}</div>}
   {p.nextStep&&<div style={{fontSize:10,color:C.tx2,marginTop:2}}>Next: {p.nextStep}</div>}
 </div>;})}
-<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
+<FileUpload nodeId={nid} nodeName={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
 if(nid==="fundraising"){var wp=Math.round(D.investors.reduce(function(a,v){return a+(parseFloat(v.check.replace(/[^0-9.]/g,""))||0)*(v.prob/100);},0));return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Fundraising</div><Row label="Investors" value={D.investors.length}/><Row label="Weighted Pipeline" value={"~$"+wp+"K"} color={C.a}/><Row label="Runway Pressure" value={D.fin.runway<4?"HIGH":"Moderate"} color={D.fin.runway<4?C.r:C.a}/><Sec>Pipeline</Sec>{D.investors.map(function(v,i){return <div key={i} style={{padding:"8px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{display:"flex",alignItems:"center",gap:6,fontSize:14}}><span style={{fontWeight:600}}>{v.name}</span><Tag color={C.gold}>{v.stage}</Tag><span style={{fontFamily:"'JetBrains Mono',monospace",color:v.prob>=30?C.g:C.a}}>{v.prob}%</span><span style={{color:C.tx2}}>{v.check}</span></div><div style={{fontSize:12,color:C.tx3,marginTop:2}}>Next: {v.next} | {v.thesis&&v.thesis.slice(0,60)}</div></div>;})}
 {/* Investor Update Generator */}
 <Sec>📨 Quick Update Generator</Sec>
@@ -585,7 +615,7 @@ if(nid==="fundraising"){var wp=Math.round(D.investors.reduce(function(a,v){retur
     return <span key={i} onClick={function(){setMode("control");setInp("Generate a "+tpl+" for DOGMA Robotics investors. Include current metrics: burn $"+(D.fin.burn/1000).toFixed(1)+"K/mo, runway "+D.fin.runway+"mo, "+D.pilots.length+" pilots in pipeline, "+D.investors.length+" investors tracked. Milestones: "+D.milestones.map(function(m){return m.title+" ("+m.pct+"%)";}).join(", ")+". Format as a professional investor email.");}} style={{padding:"4px 10px",fontSize:11,borderRadius:4,cursor:"pointer",background:C.gold+"08",color:C.gold,border:"1px solid "+C.gold+"20",fontWeight:600}}>{tpl} →</span>;
   })}
 </div>
-<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
+<FileUpload nodeId={nid} nodeName={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
 if(nid==="finance"){
 var totalSpend=D.fin.spend.reduce(function(a,s){return a+s.a;},0);
 var capex=D.fin.spend.filter(function(s){return s.c.indexOf("Component")>=0||s.c.indexOf("Equipment")>=0;}).reduce(function(a,s){return a+s.a;},0);
@@ -648,9 +678,9 @@ return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}
   <Tag color={dc(s.risk==="high"?"critical":"active")}>{s.risk}</Tag>
   <span style={{fontSize:11,color:C.tx3}}>{s.lead}</span>
 </div>;})}
-<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
-if(nid==="team"){var doneCount=D.tasks.filter(function(t){return t.status==="done";}).length;var avgPct=D.tasks.length?Math.round(D.tasks.reduce(function(a,t){return a+(t.pct||0);},0)/D.tasks.length):0;return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Task Board</div><Row label="Total" value={D.tasks.length}/><Row label="Critical" value={cr} color={cr?C.r:C.g}/><Row label="Done" value={doneCount+"/"+D.tasks.length} color={C.g}/><Row label="Avg Completion" value={avgPct+"%"} color={avgPct>60?C.g:C.a}/><div style={{marginTop:6,marginBottom:12}}><div style={{height:8,background:C.bd,borderRadius:4,overflow:"hidden"}}><div style={{width:avgPct+"%",height:"100%",background:avgPct>=80?C.g:avgPct>=40?C.gold:C.a,borderRadius:4,transition:"width 0.3s"}}/></div></div>{canEdit&&<div style={{marginBottom:10}}><Btn v="gold" onClick={function(){setShowCreate({type:"tasks"});}}>+ New Task</Btn></div>}<Sec>All Tasks</Sec>{D.tasks.map(function(t,i){var pct=t.pct||0;return <div key={i} style={{padding:"6px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{display:"flex",alignItems:"center",gap:6,fontSize:14}}><Dot s={t.status}/><span style={{flex:1}}>{t.title}</span><Tag color={dc(t.pri)}>{t.pri}</Tag><Tag>{t.ws}</Tag><span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:pct>=100?C.g:pct>=50?C.gold:C.tx3,minWidth:32,textAlign:"right"}}>{pct}%</span><span style={{fontSize:12,color:C.tx3}}>{t.due}</span></div><div style={{marginTop:3,height:4,background:C.bd,borderRadius:2,overflow:"hidden"}}><div style={{width:pct+"%",height:"100%",background:pct>=100?C.g:pct>=50?C.gold:C.a,borderRadius:2}}/></div></div>;})}<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
-if(nid==="roadmap"){var avgS=Math.round(D.safety.reduce(function(a,s){return a+s.cov;},0)/D.safety.length);return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Roadmap</div><Sec>Milestones</Sec>{D.milestones.map(function(m,i){return <div key={i} style={{padding:"8px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{fontSize:14}}><span style={{fontWeight:600}}>{m.title}</span> <Tag color={dc(m.risk)}>{m.risk}</Tag> <span style={{color:C.tx3}}>{m.target}</span></div><div style={{marginTop:3}}><PB val={m.pct} w={100}/> <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{m.pct}%</span></div>{m.blockers.length>0&&<div style={{fontSize:12,color:C.r,marginTop:2}}>{m.blockers.join(" | ")}</div>}</div>;})}<Sec>Safety ({avgS}%)</Sec>{D.safety.map(function(sf,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",fontSize:14}}><span style={{flex:1}}>{sf.name}</span><PB val={sf.cov} w={50} color={sf.cov>70?C.g:sf.cov>50?C.a:C.r}/><span style={{fontFamily:"'JetBrains Mono',monospace"}}>{sf.cov}%</span></div>;})}<FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
+<FileUpload nodeId={nid} nodeName={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
+if(nid==="team"){var doneCount=D.tasks.filter(function(t){return t.status==="done";}).length;var avgPct=D.tasks.length?Math.round(D.tasks.reduce(function(a,t){return a+(t.pct||0);},0)/D.tasks.length):0;return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Task Board</div><Row label="Total" value={D.tasks.length}/><Row label="Critical" value={cr} color={cr?C.r:C.g}/><Row label="Done" value={doneCount+"/"+D.tasks.length} color={C.g}/><Row label="Avg Completion" value={avgPct+"%"} color={avgPct>60?C.g:C.a}/><div style={{marginTop:6,marginBottom:12}}><div style={{height:8,background:C.bd,borderRadius:4,overflow:"hidden"}}><div style={{width:avgPct+"%",height:"100%",background:avgPct>=80?C.g:avgPct>=40?C.gold:C.a,borderRadius:4,transition:"width 0.3s"}}/></div></div>{canEdit&&<div style={{marginBottom:10}}><Btn v="gold" onClick={function(){setShowCreate({type:"tasks"});}}>+ New Task</Btn></div>}<Sec>All Tasks</Sec>{D.tasks.map(function(t,i){var pct=t.pct||0;return <div key={i} style={{padding:"6px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{display:"flex",alignItems:"center",gap:6,fontSize:14}}><Dot s={t.status}/><span style={{flex:1}}>{t.title}</span><Tag color={dc(t.pri)}>{t.pri}</Tag><Tag>{t.ws}</Tag><span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:pct>=100?C.g:pct>=50?C.gold:C.tx3,minWidth:32,textAlign:"right"}}>{pct}%</span><span style={{fontSize:12,color:C.tx3}}>{t.due}</span></div><div style={{marginTop:3,height:4,background:C.bd,borderRadius:2,overflow:"hidden"}}><div style={{width:pct+"%",height:"100%",background:pct>=100?C.g:pct>=50?C.gold:C.a,borderRadius:2}}/></div></div>;})}<FileUpload nodeId={nid} nodeName={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
+if(nid==="roadmap"){var avgS=Math.round(D.safety.reduce(function(a,s){return a+s.cov;},0)/D.safety.length);return(<div><div style={{fontSize:22,fontWeight:700,color:C.gold,marginBottom:8}}>Roadmap</div><Sec>Milestones</Sec>{D.milestones.map(function(m,i){return <div key={i} style={{padding:"8px 0",borderBottom:"1px solid "+C.bd+"30"}}><div style={{fontSize:14}}><span style={{fontWeight:600}}>{m.title}</span> <Tag color={dc(m.risk)}>{m.risk}</Tag> <span style={{color:C.tx3}}>{m.target}</span></div><div style={{marginTop:3}}><PB val={m.pct} w={100}/> <span style={{fontFamily:"'JetBrains Mono',monospace"}}>{m.pct}%</span></div>{m.blockers.length>0&&<div style={{fontSize:12,color:C.r,marginTop:2}}>{m.blockers.join(" | ")}</div>}</div>;})}<Sec>Safety ({avgS}%)</Sec>{D.safety.map(function(sf,i){return <div key={i} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 0",fontSize:14}}><span style={{flex:1}}>{sf.name}</span><PB val={sf.cov} w={50} color={sf.cov>70?C.g:sf.cov>50?C.a:C.r}/><span style={{fontFamily:"'JetBrains Mono',monospace"}}>{sf.cov}%</span></div>;})}<FileUpload nodeId={nid} nodeName={nid} files={files} onUpload={onUpload} onRemove={onRemove}/></div>);}
 // ── Catch-all: render any NODE_TREE node with full features ──
 var nodeConfig=findNode(nid,acts.liveTree);
 if(nodeConfig){
@@ -714,7 +744,7 @@ if(nodeConfig){
     {/* Activity Feed */}
     <div style={{marginTop:16}}><Sec>Activity</Sec><ActivityFeed events={(acts.activity||[]).filter(function(e){return e.nodeId===nid;}).slice(0,20)}/></div>
 
-    <FileUpload nodeId={nid} files={files} onUpload={onUpload} onRemove={onRemove}/>
+    <FileUpload nodeId={nid} nodeName={nodeConfig?nodeConfig.label:nid} files={files} onUpload={onUpload} onRemove={onRemove}/>
   </div>);
 }
 return null;}
@@ -763,7 +793,7 @@ if(tp==="ss")return(<div><EditTitle text={d.name} canEdit={ce} onSave={function(
     <span onClick={function(){var v=prompt("New version tag (e.g. v3.3):");if(v)F("ver",v);}} style={{fontSize:9,color:C.gold,cursor:"pointer",padding:"2px 6px",border:"1px solid "+C.gold+"25",borderRadius:3}}>+ Bump Version</span>
   </div>}
 </div>
-<FileUpload nodeId={d.id} files={files} onUpload={onUpload} onRemove={onRemove}/>{DeleteBtn}</div>);
+<FileUpload nodeId={d.id} nodeName={d.name||d.id} files={files} onUpload={onUpload} onRemove={onRemove}/>{DeleteBtn}</div>);
 
 if(tp==="skill")return(<div><EditTitle text={d.name} canEdit={ce} onSave={function(v){F("name",v);}}/><Tag color={dc(d.status)}>{d.status}</Tag>
 <Row label="Success Rate" value={d.success+"%"} color={d.success>80?C.g:C.a} canEdit={ce} onSave={function(v){F("success",parseInt(v)||0);}}/><Row label="Tests Run" value={d.tests} canEdit={ce} onSave={function(v){F("tests",parseInt(v)||0);}}/><Row label="Status" value={d.status} canEdit={ce} onSave={function(v){F("status",v);}}/><Row label="Last Tested" value={d.lastTest} canEdit={ce} onSave={function(v){F("lastTest",v);}}/>
