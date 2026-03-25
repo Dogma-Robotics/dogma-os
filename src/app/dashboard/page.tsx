@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Updated: 2026-03-24 21:07
+// Updated: 2026-03-24 21:29 - Burn $400/mo, Cash $5.5K, Runway 11mo, 1 pilot
 'use client'
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useOpenClaw } from '@/hooks/useOpenClaw';
@@ -152,7 +152,7 @@ milestones:[
 safety:[{id:"sf1",name:"ISO 10218-1",cov:85,gaps:["Emergency stop validation testing pending","Safety-rated controller certification needed"]},{id:"sf2",name:"ISO 10218-2",cov:60,gaps:["System integration risk assessment incomplete","Safeguard selection and validation pending"]},{id:"sf3",name:"ISO/TS 15066",cov:40,gaps:["Collaborative force limit validation not done","Speed and separation monitoring not implemented","Human proximity zone mapping needed","Power and force limiting mode not characterized"]},{id:"sf4",name:"NOM-004 STPS",cov:70,gaps:["Spanish language documentation incomplete","STPS formal registration process not started"]}],
 supply:[{id:"sp1",item:"McKibben bladders",supplier:"Custom MFG Shenzhen",lead:"4 weeks",risk:"high",note:"Single source. No backup supplier identified. Critical path item."},{id:"sp2",item:"FSR 402 sensors",supplier:"Interlink Electronics",lead:"2 weeks",risk:"medium",note:"Currently backordered. Alternative: FSR 406 (higher cost, lower temp drift)."},{id:"sp3",item:"Dyneema PE line",supplier:"DSM via distributor",lead:"1 week",risk:"low",note:"Stock available at local distributor."},{id:"sp4",item:"ESP32-S3 modules",supplier:"Espressif",lead:"2 weeks",risk:"low",note:"Alternative: ESP32-WROOM-1 pin-compatible."}],
 decisions:[{title:"McKibben pneumatic over electric actuators",why:"Superior compliance and force density for biomimetic grasping. 3x force-to-weight ratio.",date:"Jan 2026"},{title:"Industrial pilots before full humanoid deployment",why:"Faster path to revenue validation. Deploy Genesis Hand on existing UR10e arm platform.",date:"Feb 2026"},{title:"Mexico nearshoring as initial market entry",why:"Lower deployment cost, founder network advantage, proximity to US customers.",date:"Dec 2025"}],
-fin:{burn:500,cash:5500,runway:11,bom:3000,spend:[{c:"Components & Materials",a:200},{c:"Lab & Equipment",a:150},{c:"Software & Cloud",a:50},{c:"Travel & Site Visits",a:30},{c:"Professional Services",a:20},{c:"Misc Operating",a:50}]},
+fin:{burn:400,cash:5500,runway:11,bom:3000,spend:[{c:"Components & Materials",a:150},{c:"Lab & Equipment",a:100},{c:"Software & Cloud",a:50},{c:"Travel & Site Visits",a:30},{c:"Professional Services",a:20},{c:"Misc Operating",a:50}]},
 log:[{t:"EXP-047 Tendon cal PASSED",at:"Mar 14 4:30PM"},{t:"Eclipse Ventures advanced to 1st Meeting",at:"Mar 14 2:30PM"},{t:"INC-003 opened: DEV-B actuator leak",at:"Mar 12 4:15PM"},{t:"Amazon MX viability updated to 88%",at:"Mar 12 11:00AM"},{t:"Pinch grasp validated at 92%",at:"Mar 10 3:00PM"},{t:"INC-001 resolved: Tendon snap fix",at:"Mar 2 5:00PM"},{t:"PTFE sleeve retrofit completed on all units",at:"Mar 5 2:00PM"}],
 seq:{exp:48,inc:4,task:9},
 // Causal dependency chains: source → blocks [targets]
@@ -1208,30 +1208,50 @@ useEffect(function(){
   // Not authenticated - redirect to login
   if(typeof window!=="undefined")window.location.href="/";
 },[]);
-// Restore saved data from localStorage
+// Data loading: API file > localStorage > seed (in priority order)
+var _dataReady=useState(false),dataReady=_dataReady[0],setDataReady=_dataReady[1];
 useEffect(function(){
-  try{
-    var saved=localStorage.getItem("dogma_data");
-    if(saved){var parsed=JSON.parse(saved);if(parsed&&parsed.ss&&parsed.ss.length>0){setD(function(prev){return Object.assign({},prev,parsed);});}}
-  }catch(e){}
+  // 1. Try API (OpenClaw memory file — source of truth)
+  fetch("/api/command-center").then(function(r){return r.json();}).then(function(saved){
+    if(saved&&saved.ss&&!saved.error){
+      setD(function(prev){return Object.assign({},prev,saved);});
+      setDataReady(true);
+      return;
+    }
+    throw new Error("no api data");
+  }).catch(function(){
+    // 2. Try localStorage
+    try{
+      var local=localStorage.getItem("dogma_data");
+      if(local){var parsed=JSON.parse(local);if(parsed&&parsed.ss&&parsed.ss.length>0){setD(function(prev){return Object.assign({},prev,parsed);});}}
+    }catch(e){}
+    setDataReady(true);
+  });
 },[]);
-// Auto-save data to localStorage + API + OpenClaw memory on changes (debounced)
+// Auto-save ONLY after data is loaded (prevents overwriting saved data with seed)
 useEffect(function(){
+  if(!dataReady)return;
   var t=setTimeout(function(){
     try{localStorage.setItem("dogma_data",JSON.stringify(D));}catch(e){}
-    // Also persist to API (saves to OpenClaw memory file)
     fetch("/api/command-center",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(D)}).catch(function(){});
   },2000);
   return function(){clearTimeout(t);};
-},[D]);
-// Load saved data from API on mount (OpenClaw memory is source of truth)
+},[D,dataReady]);
+// Poll for OpenClaw agent changes every 10s
 useEffect(function(){
-  fetch("/api/command-center").then(function(r){return r.json();}).then(function(saved){
-    if(saved&&saved.fin&&!saved.error){
-      setD(function(prev){return Object.assign({},prev,saved);});
-    }
-  }).catch(function(){});
-},[]);
+  if(!dataReady)return;
+  var iv=setInterval(function(){
+    fetch("/api/command-center").then(function(r){return r.json();}).then(function(saved){
+      if(saved&&saved.ss&&!saved.error){
+        // Only update if data actually changed (compare timestamps or keys)
+        if(saved._lastAgentEdit&&saved._lastAgentEdit!==D._lastAgentEdit){
+          setD(function(prev){return Object.assign({},prev,saved);});
+        }
+      }
+    }).catch(function(){});
+  },10000);
+  return function(){clearInterval(iv);};
+},[dataReady]);
 var doLogout=function(){
   setAuthed(false);setUserName("");setUserRole("viewer");
   try{localStorage.removeItem("dogma_session");}catch(e){}

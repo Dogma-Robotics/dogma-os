@@ -107,11 +107,12 @@ export async function POST(req: NextRequest) {
         Object.assign(current, params.data || {})
       }
 
+      current._lastAgentEdit = new Date().toISOString()
       await saveData(current)
       return NextResponse.json({ ok: true, action })
     }
 
-    // Full data save
+    // Full data save (from dashboard auto-save — no _lastAgentEdit stamp)
     await saveData(body)
     return NextResponse.json({ ok: true })
   } catch (e: any) {
