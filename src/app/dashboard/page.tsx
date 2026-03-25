@@ -1155,6 +1155,9 @@ var applyFilters=function(rows,cols){
 var allNodesList=useMemo(function(){var list=[];function walk(nodes){nodes.forEach(function(n){list.push({id:n.id,label:n.label,icon:n.icon});if(n.children)walk(n.children);});}walk(liveTree);return list;},[liveTree]);
 var _designGuide=useState("DOGMA Brand: Navy #0A0A18 bg, Gold #C8A74B accents, Inter body, JetBrains Mono code. Reports: dark luxury, gold headers, metric grids, badges (pass=green fail=red warn=amber). Always include DOGMA header + confidential footer."),designGuide=_designGuide[0],setDesignGuide=_designGuide[1];
 var _designImages=useState([]),designImages=_designImages[0],setDesignImages=_designImages[1];
+var _designPrompt=useState(""),designPrompt=_designPrompt[0],setDesignPrompt=_designPrompt[1];
+var _designResult=useState(""),designResult=_designResult[0],setDesignResult=_designResult[1];
+var _designLoading=useState(false),designLoading=_designLoading[0],setDesignLoading=_designLoading[1];
 var _showThinking=useState(false),showThinking=_showThinking[0],setShowThinking=_showThinking[1];
 var _streamingMsg=useState(null),streamingMsg=_streamingMsg[0],setStreamingMsg=_streamingMsg[1];
 var oc=useOpenClaw();
@@ -2039,15 +2042,10 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
       <div onMouseDown={function(e){e.preventDefault();resizeRef.current=true;document.body.style.cursor="col-resize";document.body.style.userSelect="none";}} style={{position:"absolute",left:-3,top:0,bottom:0,width:6,cursor:"col-resize",zIndex:10,background:"transparent"}} onMouseEnter={function(e){e.currentTarget.style.background=C.gold+"30";}} onMouseLeave={function(e){if(!resizeRef.current)e.currentTarget.style.background="transparent";}}/>
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
-      {/* Mode toggle: Chat / Swarm */}
-      <div style={{display:"flex",borderBottom:"1px solid "+C.bd,flexShrink:0,position:"relative"}}>
+      {/* Mode tabs */}
+      <div style={{display:"flex",borderBottom:"1px solid "+C.bd,flexShrink:0}}>
         <div onClick={function(){setMode("control");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="control"?C.gold:C.tx3,borderBottom:mode==="control"?"2px solid "+C.gold:"2px solid transparent",background:mode==="control"?C.gold+"08":"transparent"}}>🦞 Control</div>
-
-        <div onClick={function(){setMode("design");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="design"?C.gold:C.tx3,borderBottom:mode==="design"?"2px solid "+C.gold:"2px solid transparent",background:mode==="design"?C.gold+"08":"transparent"}}>Design</div>
-        <div onClick={function(){setMode("timeline");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="timeline"?C.gold:C.tx3,borderBottom:mode==="timeline"?"2px solid "+C.gold:"2px solid transparent",background:mode==="timeline"?C.gold+"08":"transparent"}}>📊 Timeline</div>
-
-
-        <div onClick={function(){setMode("approvals");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="approvals"?C.gold:C.tx3,borderBottom:mode==="approvals"?"2px solid "+C.gold:"2px solid transparent",background:mode==="approvals"?C.gold+"08":"transparent"}}>{pendingMuts.length>0?"⚠️":"✅"} Queue{pendingMuts.length>0?" ("+pendingMuts.length+")":""}</div>
+        <div onClick={function(){setMode("design");}} style={{flex:1,padding:"8px 0",textAlign:"center",fontSize:11,fontWeight:600,cursor:"pointer",color:mode==="design"?C.gold:C.tx3,borderBottom:mode==="design"?"2px solid "+C.gold:"2px solid transparent",background:mode==="design"?C.gold+"08":"transparent"}}>📄 Design</div>
       </div>
 
       {/* ═══ CONTROL MODE — Full OpenClaw Dashboard ═══ */}
@@ -2163,8 +2161,8 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
       </div>
       </>}
 
-      {/* ═══ TIMELINE MODE ═══ */}
-      {mode==="timeline"&&<>
+      {/* ═══ TIMELINE MODE (removed) ═══ */}
+      {false&&mode==="timeline"&&<>
       <div style={{flex:1,overflowY:"auto",padding:10}}>
         <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:10}}>📊 Activity Timeline</div>
         <div style={{display:"flex",gap:4,marginBottom:10,flexWrap:"wrap"}}>
@@ -2507,25 +2505,61 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
 
       
       {/* ═══ APPROVALS MODE ═══ */}
-      {mode==="design"&&<div style={{flex:1,overflowY:"auto",padding:12}}>
-        <div style={{fontSize:15,fontWeight:700,color:C.gold,marginBottom:4}}>Design Guide</div>
-        <div style={{fontSize:11,color:C.tx2,marginBottom:12}}>These guidelines are injected into agents when they generate documents, reports, and presentations.</div>
-        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:6}}>Brand Guidelines</div>
-        <textarea value={designGuide} onChange={function(e){setDesignGuide(e.target.value);}} style={{width:"100%",minHeight:180,padding:"10px 12px",fontSize:12,lineHeight:1.6,background:C.bg,border:"1px solid "+C.bd,borderRadius:4,color:C.tx,outline:"none",resize:"vertical",fontFamily:"'JetBrains Mono',monospace"}}/>
-        <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginTop:16,marginBottom:6}}>Reference Images</div>
-        <div style={{fontSize:11,color:C.tx2,marginBottom:8}}>Upload logos, color palettes, mockups, or style references.</div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8}}>
-          {designImages.map(function(img,i){return <div key={i} style={{position:"relative",width:100,height:100,borderRadius:4,overflow:"hidden",border:"1px solid "+C.bd}}>
-            <img src={img.data} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-            <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"2px 4px",background:"rgba(0,0,0,0.7)",fontSize:9,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{img.name}</div>
-            <div onClick={function(){setDesignImages(function(prev){return prev.filter(function(_,j){return j!==i;});});}} style={{position:"absolute",top:2,right:4,cursor:"pointer",color:"#fff",fontSize:12,textShadow:"0 1px 3px rgba(0,0,0,0.8)"}}>x</div>
-          </div>;})}
+      {mode==="design"&&<div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        <div style={{padding:"10px 12px",borderBottom:"1px solid "+C.bd,flexShrink:0}}>
+          <div style={{fontSize:15,fontWeight:700,color:C.gold,marginBottom:4}}>📄 Document Generator</div>
+          <div style={{fontSize:11,color:C.tx2}}>Generate documents via OpenClaw. Brand guidelines are included in every request.</div>
         </div>
-        <div style={{position:"relative"}}>
-          <input type="file" accept="image/*" multiple onChange={function(e){var files=e.target.files;if(files){for(var i=0;i<files.length;i++){(function(file){var reader=new FileReader();reader.onload=function(ev){setDesignImages(function(prev){return prev.concat([{name:file.name,data:ev.target.result}]);});};reader.readAsDataURL(file);})(files[i]);}e.target.value="";}}} style={{position:"absolute",inset:0,opacity:0,cursor:"pointer"}}/>
-          <div style={{padding:"12px",border:"1px dashed "+C.bd,borderRadius:4,textAlign:"center",cursor:"pointer",fontSize:12,color:C.tx3}}>+ Upload reference images</div>
+        {/* Brand guidelines editor */}
+        <div style={{padding:"8px 12px",borderBottom:"1px solid "+C.bd,flexShrink:0}}>
+          <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:4}}>Brand Guidelines (injected into all requests)</div>
+          <textarea value={designGuide} onChange={function(e){setDesignGuide(e.target.value);}} style={{width:"100%",minHeight:80,padding:"8px 10px",fontSize:11,lineHeight:1.5,background:C.bg,border:"1px solid "+C.bd,borderRadius:4,color:C.tx,outline:"none",resize:"vertical",fontFamily:"'JetBrains Mono',monospace"}}/>
         </div>
-        <div onClick={function(){setDesignGuide("DOGMA Brand: Navy #0A0A18 bg, Gold #C8A74B accents, Inter body, JetBrains Mono code. Reports: dark luxury, gold headers, metric grids, badges (pass=green fail=red warn=amber). Always include DOGMA header + confidential footer.");}} style={{marginTop:12,fontSize:10,color:C.tx3,cursor:"pointer",textDecoration:"underline"}}>Reset to defaults</div>
+        {/* Quick document templates */}
+        <div style={{padding:"8px 12px",borderBottom:"1px solid "+C.bd,flexShrink:0}}>
+          <div style={{fontSize:10,color:C.gold,textTransform:"uppercase",letterSpacing:"0.1em",fontWeight:700,marginBottom:6}}>Quick Generate</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+            {[
+              {label:"Investor Update",prompt:"Generate a professional investor update email for DOGMA Robotics. Include current metrics, milestones, and next steps."},
+              {label:"Technical Report",prompt:"Generate a technical engineering report on the current state of the DOGMA Genesis Hand. Include subsystem maturity, open issues, and recommendations."},
+              {label:"Pilot Proposal",prompt:"Generate a pilot proposal document for a manufacturing partner. Include ROI analysis, deployment timeline, and technical specifications."},
+              {label:"Pitch Deck Script",prompt:"Generate a pitch deck script for DOGMA Robotics. Cover problem, solution, market, traction, team, and ask."},
+              {label:"Weekly Status",prompt:"Generate a weekly status report covering engineering progress, pilot pipeline, fundraising, and blockers."},
+              {label:"Safety Compliance",prompt:"Generate an ISO/TS 15066 compliance gap analysis document based on DOGMA's current safety coverage."},
+            ].map(function(tpl){return <div key={tpl.label} onClick={function(){setDesignPrompt(tpl.prompt);}} style={{padding:"4px 10px",fontSize:10,borderRadius:3,cursor:"pointer",background:C.bg,border:"1px solid "+C.bd,color:C.tx}} onMouseEnter={function(e){e.currentTarget.style.borderColor=C.gold;}} onMouseLeave={function(e){e.currentTarget.style.borderColor=C.bd;}}>{tpl.label}</div>;})}
+          </div>
+        </div>
+        {/* Prompt input */}
+        <div style={{padding:"8px 12px",borderBottom:"1px solid "+C.bd,flexShrink:0}}>
+          <textarea value={designPrompt} onChange={function(e){setDesignPrompt(e.target.value);}} placeholder="Describe the document you want to generate..." rows={3} style={{width:"100%",padding:"8px 10px",fontSize:12,background:C.bg,border:"1px solid "+C.bd,borderRadius:4,color:C.tx,outline:"none",resize:"vertical",fontFamily:"inherit"}}/>
+          <div style={{display:"flex",gap:6,marginTop:6}}>
+            <button onClick={function(){
+              if(!designPrompt.trim()||designLoading)return;
+              setDesignLoading(true);setDesignResult("");
+              var fullPrompt="DOGMA BRAND GUIDELINES:\n"+designGuide+"\n\nDOGMA CONTEXT:\n"+(sel?("Current node: "+(findNode(sel.id,liveTree)||{}).label+". "):"")+"Company: DOGMA Robotics. Biomimetic musculoskeletal humanoid hands. 20 DOF hand, 6 DOF arm, McKibben pneumatic, $5K target. Pilots: Modelo, Amazon MX, Foxconn. Investors: Eclipse, Khosla, YC. Runway: 3.6mo.\n\nREQUEST:\n"+designPrompt;
+              fetch("/api/openclaw/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"openclaw",messages:[{role:"system",content:"You are DOGMA Robotics document generator. Follow the brand guidelines strictly. Produce professional, elegant, technical documents. Use DOGMA's dark luxury aesthetic in any HTML output."},{role:"user",content:fullPrompt}]})}).then(function(r){return r.json();}).then(function(d){var text=d.choices&&d.choices[0]&&d.choices[0].message?d.choices[0].message.content:"(no response)";setDesignResult(text);setDesignLoading(false);}).catch(function(e){setDesignResult("Error: "+e.message);setDesignLoading(false);});
+            }} disabled={designLoading||!designPrompt.trim()} style={{flex:1,padding:"8px",fontSize:12,fontWeight:700,background:C.gold+"15",color:C.gold,border:"1px solid "+C.gold+"40",borderRadius:4,cursor:designLoading?"wait":"pointer",textTransform:"uppercase",opacity:designLoading||!designPrompt.trim()?0.5:1}}>{designLoading?"🦞 Generating...":"🦞 Generate with OpenClaw"}</button>
+          </div>
+        </div>
+        {/* Result */}
+        <div style={{flex:1,overflowY:"auto",padding:12}}>
+          {!designResult&&!designLoading&&<div style={{textAlign:"center",padding:30,color:C.tx3}}>
+            <div style={{fontSize:32,marginBottom:8}}>📄</div>
+            <div style={{fontSize:14,fontWeight:600,color:C.tx2}}>Document Generator</div>
+            <div style={{fontSize:11,marginTop:4}}>Select a template or describe what you need. OpenClaw generates it with full DOGMA context and brand guidelines.</div>
+          </div>}
+          {designLoading&&<div style={{textAlign:"center",padding:30}}><div style={{fontSize:24,marginBottom:8}}>🦞</div><div style={{fontSize:13,color:C.gold}}>Generating document...</div></div>}
+          {designResult&&<div>
+            <div style={{display:"flex",gap:4,marginBottom:8}}>
+              <span onClick={function(){navigator.clipboard.writeText(designResult);}} style={{fontSize:10,color:C.gold,cursor:"pointer",padding:"3px 8px",border:"1px solid "+C.gold+"30",borderRadius:3}}>Copy</span>
+              <span onClick={function(){var blob=new Blob([designResult],{type:"text/plain"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download="dogma-document.md";a.click();}} style={{fontSize:10,color:C.gold,cursor:"pointer",padding:"3px 8px",border:"1px solid "+C.gold+"30",borderRadius:3}}>Download .md</span>
+              <span onClick={function(){var html="<html><head><style>body{font-family:Helvetica;padding:40px;max-width:700px;margin:auto;background:#0A0A18;color:#C8C4BC}h1,h2,h3{color:#C8A74B}table{border-collapse:collapse;width:100%}th,td{border:1px solid #1A1A35;padding:6px}th{background:#0E0E20}</style></head><body>"+designResult.replace(/\n/g,"<br>")+"</body></html>";var blob=new Blob([html],{type:"text/html"});var url=URL.createObjectURL(blob);window.open(url,"_blank");}} style={{fontSize:10,color:C.gold,cursor:"pointer",padding:"3px 8px",border:"1px solid "+C.gold+"30",borderRadius:3}}>Preview HTML</span>
+              <div style={{flex:1}}/>
+              <span onClick={function(){setDesignResult("");}} style={{fontSize:10,color:C.tx3,cursor:"pointer",padding:"3px 8px",border:"1px solid "+C.bd,borderRadius:3}}>Clear</span>
+            </div>
+            <div style={{padding:"12px 14px",background:C.bg,borderRadius:6,border:"1px solid "+C.bd,fontSize:12,color:C.tx,lineHeight:1.7,whiteSpace:"pre-wrap",fontFamily:"'JetBrains Mono',monospace"}}><MsgText text={designResult}/></div>
+          </div>}
+        </div>
       </div>}
 
       {false&&<div style={{flex:1,overflowY:"auto",padding:12}}>
@@ -2568,7 +2602,7 @@ return(<div suppressHydrationWarning style={{width:"100vw",height:"100vh",overfl
         </div>
       </div>}
 
-            {mode==="approvals"&&<>
+            {false&&mode==="approvals"&&<>
       <div style={{flex:1,overflowY:"auto",padding:10}}>
         <div style={{fontSize:13,fontWeight:700,color:C.gold,marginBottom:6}}>⚠️ Approval Queue</div>
         <div style={{fontSize:11,color:C.tx2,marginBottom:12}}>Agent-proposed mutations waiting for your approval.</div>
