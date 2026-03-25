@@ -33,71 +33,69 @@ function parseThinking(t){if(!t)return{thinking:"",text:t};var start=t.indexOf("
 
 // File upload component per node
 function FileUpload({nodeId,nodeName,files,onUpload,onRemove}){
-  var nodeFiles=(files[nodeId]||[]);
   var inputRef=useRef(null);
   var _saving=useState(null),saving=_saving[0],setSaving=_saving[1];
-  // Fetch ALL OpenClaw memory files and show them
   var _memFiles=useState([]),memFiles=_memFiles[0],setMemFiles=_memFiles[1];
-  var _memLoaded=useState(false),memLoaded=_memLoaded[0],setMemLoaded=_memLoaded[1];
+  var _ver=useState(0),ver=_ver[0],setVer=_ver[1];
+  // Fetch OpenClaw memory files
   useEffect(function(){
     fetch("/api/openclaw-memory").then(function(r){return r.json();}).then(function(data){
-      if(data.files){setMemFiles(data.files.filter(function(f){return!f.name.endsWith(".context.md")&&!f.name.startsWith(".");}));}
-      setMemLoaded(true);
-    }).catch(function(){setMemLoaded(true);});
-  },[saving]); // refetch after upload
+      if(data.files)setMemFiles(data.files);
+    }).catch(function(){});
+  },[ver]);
+  // Upload handler
   var handleFile=function(e){
     var f=e.target.files;if(!f||!f.length)return;
-    for(var i=0;i<f.length;i++){
-      var file=f[i];
-      // Save to local state
-      var reader=new FileReader();
-      reader.onload=function(ev){
-        onUpload(nodeId,{name:file.name,size:file.size,type:file.type,data:ev.target.result,at:nw(),savedToMemory:false});
-      };
-      reader.readAsDataURL(file);
-      // Also save to OpenClaw memory
-      (function(fl){
-        setSaving(fl.name);
-        var fd=new FormData();
-        fd.append("file",fl);
-        fd.append("nodeId",nodeId);
-        fd.append("nodeName",nodeName||nodeId);
-        fetch("/api/openclaw-memory",{method:"POST",body:fd}).then(function(r){return r.json();}).then(function(d){
-          setSaving(null);
-        }).catch(function(){setSaving(null);});
-      })(file);
-    }
+    for(var i=0;i<f.length;i++){(function(fl){
+      setSaving(fl.name);
+      var fd=new FormData();fd.append("file",fl);fd.append("nodeId",nodeId);fd.append("nodeName",nodeName||nodeId);
+      fetch("/api/openclaw-memory",{method:"POST",body:fd}).then(function(){setSaving(null);setVer(function(v){return v+1;});}).catch(function(){setSaving(null);});
+    })(f[i]);}
     e.target.value="";
   };
-  // Merge: local files + OpenClaw memory files (deduplicated)
-  var localNames=nodeFiles.map(function(f){return f.name;});
-  var allFiles=nodeFiles.slice();
-  // Add OpenClaw memory files not already in local
-  memFiles.forEach(function(mf){
-    // Extract display name (strip node-xxx-- prefix if present)
-    var displayName=mf.name.replace(/^node-[^-]+-+-/,"");
-    if(localNames.indexOf(displayName)<0&&localNames.indexOf(mf.name)<0){
-      allFiles.push({name:displayName,size:0,type:"",data:null,at:"",savedToMemory:true,memoryFile:mf.name,fromOC:true});
-    }
-  });
+  var deleteFile=function(fileName){
+    if(!confirm("Delete "+fileName+"?"))return;
+    fetch("/api/openclaw-memory",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({fileName:fileName})}).then(function(){setVer(function(v){return v+1;});}).catch(function(){});
+  };
+  // Group files: this node's files vs global files
+  var thisNodeFiles=memFiles.filter(function(f){return f.nodeId===nodeId;});
+  var globalFiles=memFiles.filter(function(f){return!f.nodeId;});
+  var otherNodeFiles=memFiles.filter(function(f){return f.nodeId&&f.nodeId!==nodeId;});
+  var fmtSize=function(s){return s>1048576?(s/1048576).toFixed(1)+"MB":s>1024?(s/1024).toFixed(1)+"KB":s+"B";};
+  var fileRow=function(f){return <div key={f.name} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 8px",background:C.bg,borderRadius:3,marginBottom:2,border:"1px solid "+C.bd}}>
+    <span style={{fontSize:14}}>{f.name.match(/\.(png|jpg|jpeg|gif|svg)$/i)?"🖼":f.name.match(/\.(pdf)$/i)?"📄":f.name.match(/\.(jsx|tsx|ts|js|py)$/i)?"💻":f.name.match(/\.(tex|md|txt)$/i)?"📝":f.name.match(/\.(csv|json)$/i)?"📊":"📁"}</span>
+    <div style={{flex:1,minWidth:0}}>
+      <div style={{fontSize:11,color:C.tx,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.displayName||f.name}</div>
+      <div style={{fontSize:9,color:C.tx3}}>{fmtSize(f.size||0)}{f.modified?" · "+new Date(f.modified).toLocaleDateString():""}</div>
+    </div>
+    <span onClick={function(){window.open("/api/openclaw-memory?file="+encodeURIComponent(f.name),"_blank");}} style={{cursor:"pointer",fontSize:9,color:C.gold,padding:"2px 5px",border:"1px solid "+C.gold+"30",borderRadius:2}} title="Open">Open</span>
+    <a href={"/api/openclaw-memory?file="+encodeURIComponent(f.name)} download={f.displayName||f.name} style={{fontSize:9,color:C.b,padding:"2px 5px",border:"1px solid "+C.b+"30",borderRadius:2,textDecoration:"none"}} title="Download">⬇</a>
+    <span onClick={function(){deleteFile(f.name);}} style={{cursor:"pointer",fontSize:9,color:C.r,padding:"2px 5px",border:"1px solid "+C.r+"30",borderRadius:2}} title="Delete">🗑</span>
+  </div>;};
   return(<div style={{marginTop:10}}>
-    <Sec>Files ({allFiles.length}){memFiles.length>0&&<span style={{fontWeight:400,fontSize:9,color:C.g,marginLeft:6}}>🦞 {memFiles.length} in OpenClaw memory</span>}</Sec>
-    {saving&&<div style={{fontSize:10,color:C.gold,padding:"4px 0"}}>🦞 Saving to OpenClaw memory: {saving}...</div>}
-    {allFiles.map(function(f,i){return <div key={f.name+i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",background:C.bg,borderRadius:3,marginBottom:3,border:"1px solid "+(f.fromOC?C.g+"30":C.bd)}}>
-      <span style={{fontSize:16}}>{f.fromOC?"🦞":f.type&&f.type.indexOf("image")>=0?"🖼":f.type&&f.type.indexOf("pdf")>=0?"📄":"📁"}</span>
-      <div style={{flex:1}}>
-        <div style={{fontSize:12,color:C.tx}}>{f.name}</div>
-        <div style={{fontSize:10,color:C.tx3,display:"flex",alignItems:"center",gap:4}}>
-          {f.size?(f.size/1024).toFixed(1)+"KB":""}
-          {f.at&&f.at!=="OpenClaw memory"&&<span>{f.at}</span>}
-          {(f.savedToMemory||f.fromOC)&&<span style={{color:C.g,fontSize:9,padding:"1px 4px",background:C.g+"12",borderRadius:2}}>🦞 OpenClaw memory</span>}
-        </div>
-      </div>
-      {f.type&&f.type.indexOf("image")>=0&&f.data&&<img src={f.data} style={{width:40,height:40,objectFit:"cover",borderRadius:3,border:"1px solid "+C.bd}}/>}
-      {!f.fromOC&&<span onClick={function(){onRemove(nodeId,i);if(f.memoryFile){fetch("/api/openclaw-memory",{method:"DELETE",headers:{"Content-Type":"application/json"},body:JSON.stringify({fileName:f.memoryFile})}).catch(function(){});}}} style={{cursor:"pointer",color:C.tx3,fontSize:14}}>x</span>}
-    </div>;})}
+    <Sec>🦞 OpenClaw Memory ({memFiles.length} files)</Sec>
+    {saving&&<div style={{fontSize:10,color:C.gold,padding:"4px 0"}}>Saving: {saving}...</div>}
+    {/* This node's files */}
+    {thisNodeFiles.length>0&&<div style={{marginBottom:8}}>
+      <div style={{fontSize:9,color:C.gold,textTransform:"uppercase",letterSpacing:"0.06em",fontWeight:700,marginBottom:3}}>This node ({nodeId})</div>
+      {thisNodeFiles.map(fileRow)}
+    </div>}
+    {/* Global files (no node prefix) */}
+    {globalFiles.length>0&&<div style={{marginBottom:8}}>
+      <div style={{fontSize:9,color:C.c,textTransform:"uppercase",letterSpacing:"0.06em",fontWeight:700,marginBottom:3}}>Global memory</div>
+      {globalFiles.map(fileRow)}
+    </div>}
+    {/* Other nodes' files (collapsed) */}
+    {otherNodeFiles.length>0&&<details style={{marginBottom:8}}>
+      <summary style={{fontSize:9,color:C.tx3,cursor:"pointer",marginBottom:3}}>Other nodes ({otherNodeFiles.length} files)</summary>
+      {(function(){var grouped={};otherNodeFiles.forEach(function(f){var k=f.nodeId||"unknown";if(!grouped[k])grouped[k]=[];grouped[k].push(f);});return Object.keys(grouped).map(function(nid){return <div key={nid} style={{marginBottom:4}}>
+        <div style={{fontSize:9,color:C.tx3,fontFamily:"'JetBrains Mono',monospace",marginBottom:2}}>{nid}</div>
+        {grouped[nid].map(fileRow)}
+      </div>;});})()}
+    </details>}
+    {memFiles.length===0&&!saving&&<div style={{fontSize:11,color:C.tx3,padding:"8px 0"}}>No files in OpenClaw memory</div>}
     <input ref={inputRef} type="file" multiple style={{display:"none"}} onChange={handleFile}/>
-    <div onClick={function(){inputRef.current.click();}} style={{padding:"8px 12px",border:"1px dashed "+C.bd,borderRadius:3,textAlign:"center",cursor:"pointer",fontSize:12,color:C.tx3,marginTop:4}}>+ Upload files (auto-saved to 🦞 OpenClaw memory)</div>
+    <div onClick={function(){inputRef.current.click();}} style={{padding:"8px 12px",border:"1px dashed "+C.bd,borderRadius:3,textAlign:"center",cursor:"pointer",fontSize:11,color:C.tx3,marginTop:4}}>+ Upload to 🦞 OpenClaw memory</div>
   </div>);
 }
 
